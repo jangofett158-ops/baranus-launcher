@@ -15,6 +15,8 @@ const settingsNickname = $('settingsNickname');
 const nameModal = $('nameModal');
 const firstNickname = $('firstNickname');
 
+nameModal.style.display = 'none';
+
 function showGreeting(name) { greeting.textContent = name ? `Добро пожаловать, ${name}!` : 'Добро пожаловать!'; }
 async function saveNickname(value) {
   const name = await window.launcher.setNickname(value);
@@ -34,7 +36,7 @@ window.launcher.info().then((info) => {
   nickname.value = info.nickname;
   settingsNickname.value = info.nickname;
   showGreeting(info.nickname);
-  if (!info.nickname) { nameModal.hidden = false; firstNickname.focus(); }
+  if (!info.nickname) { nameModal.hidden = false; nameModal.style.display = 'grid'; firstNickname.focus(); }
   window.launcher.checkUpdate().then((release) => {
     if (!release) return;
     update.hidden = false;
@@ -57,7 +59,7 @@ $('shaders').onclick = () => window.launcher.openShaders();
 $('resources').onclick = () => window.launcher.openResourcepacks();
 $('settings').onclick = () => { settingsPanel.hidden = !settingsPanel.hidden; if (!settingsPanel.hidden) settingsNickname.focus(); };
 $('saveNickname').onclick = async () => { try { await saveNickname(settingsNickname.value); settingsPanel.hidden = true; } catch (error) { status.textContent = `Ошибка: ${error.message}`; } };
-$('firstNicknameSave').onclick = async () => { try { await saveNickname(firstNickname.value); nameModal.hidden = true; } catch (error) { status.textContent = `Ошибка: ${error.message}`; } };
+$('firstNicknameSave').onclick = async () => { try { await saveNickname(firstNickname.value); nameModal.hidden = true; nameModal.style.display = 'none'; } catch (error) { status.textContent = `Ошибка: ${error.message}`; } };
 firstNickname.onkeydown = (event) => { if (event.key === 'Enter') $('firstNicknameSave').click(); };
 nickname.onchange = () => saveNickname(nickname.value).catch((error) => { status.textContent = `Ошибка: ${error.message}`; });
 update.onclick = async () => {

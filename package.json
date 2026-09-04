@@ -1,6 +1,6 @@
 {
   "name": "forge-1122-launcher",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Minimal launcher for Minecraft Forge 1.12.2",
   "main": "src/main.js",
   "scripts": {
