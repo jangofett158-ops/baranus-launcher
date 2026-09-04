@@ -1,8 +1,24 @@
 <!doctype html>
-<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Baranus Launcher</title><link rel="stylesheet" href="style.css"></head>
-<body><main><header><div class="mark">B</div><div><b>BARANUS</b><small>LAUNCHER · FORGE 1.12.2</small></div><span id="version" class="version">v—</span><span class="online">● ГОТОВ</span></header>
-<section class="welcome"><p></p><h1><em id="greeting">Добро пожаловать!</em><br></h1><span>Galacticraft · Forge 1.12.2</span></section>
-<section class="card"><div><label>НИКНЕЙМ<input id="nickname" maxlength="16" placeholder="Player"></label><div class="ram"><div><span>ОПЕРАТИВНАЯ ПАМЯТЬ</span><b id="ramValue">4 ГБ</b></div><input id="ram" type="range" min="1" max="4" step="1"><small id="ramHint">Максимум для этого ПК: 4 ГБ</small></div></div><div class="steps"><button id="java" class="step"><span><strong>Установить Java 8</strong><small>Скачается автоматически</small></span><i>↓</i></button><button id="minecraft" class="step"><span><strong>Установить Minecraft</strong><small>Игра, Forge, моды и все игровые библиотеки</small></span><i>↓</i></button><button id="play" class="step play"><span><strong>Играть</strong><small>Запустить сборку</small></span><i>▶</i></button></div><div class="install"><div><span id="status">Сначала установи Java 8</span><span id="progressText">0%</span></div><div class="progress"><div id="progressFill"></div></div></div></section>
-<footer><button id="mods">Папка mods</button><button id="shaders">Папка shaderspack</button><button id="resources">Папка resourcepack</button><button id="settings">Настройки</button><button id="update" hidden>Проверить обновления</button><details><summary>Журнал</summary><pre id="log"></pre></details></footer>
-<aside id="settingsPanel" hidden><b>НАСТРОЙКИ</b><label>ИМЯ ИГРОКА<input id="settingsNickname" maxlength="16" placeholder="Player"></label><small>3–16 латинских букв, цифр или _</small><button id="saveNickname">Сохранить имя</button></aside><div id="nameModal" class="modal" hidden><div class="modalCard"><b>ДОБРО ПОЖАЛОВАТЬ</b><p>Как тебя зовут?</p><input id="firstNickname" maxlength="16" placeholder="Player" autofocus><small>3–16 латинских букв, цифр или _</small><button id="firstNicknameSave">Продолжить</button></div></div>
-</main><script src="renderer.js"></script></body></html>
+<html lang="ru">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Baranus Launcher</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="override.css"></head>
+<body>
+  <main class="app">
+    <header class="topbar"><div class="brand"><span>B</span>BARANUS <small>LAUNCHER</small></div><nav><button id="mods">МОДЫ</button><button id="shaders">ШЕЙДЕРЫ</button><button id="resources">РЕСУРСПАКИ</button><button id="settings">НАСТРОЙКИ</button></nav><div class="version"><i></i><span id="version">v—</span></div></header>
+    <section class="hero">
+      <div class="orbit orbit-a"></div><div class="orbit orbit-b"></div><div class="star s1"></div><div class="star s2"></div><div class="star s3"></div>
+      <div class="hero-copy"><p class="eyebrow">КОСМИЧЕСКАЯ СБОРКА · FORGE 1.12.2</p><h1 id="greeting">Добро пожаловать!</h1><p>Исследуй новые миры, собирай ракеты и отправляйся за пределы Земли вместе с Baranus.</p><div class="build-info"><span>GALACTICRAFT</span><span>OPTIFINE</span><span>JAVA 8</span></div></div>
+      <div class="hero-side"><div class="planet"><div></div></div><p>СБОРКА ГОТОВА<br><b>К НОВОМУ ПОЛЁТУ</b></p></div>
+    </section>
+    <section class="grid">
+      <div class="profile-column">
+        <article class="panel profile"><p class="eyebrow">ТВОЙ ПРОФИЛЬ</p><label>НИКНЕЙМ<input id="nickname" maxlength="16" placeholder="Player"></label><small>Ник сохраняется автоматически</small></article>
+        <article class="panel ram"><div><p class="eyebrow">ВЫДЕЛЕННАЯ ПАМЯТЬ</p><b id="ramValue">4 ГБ</b></div><input id="ram" type="range" min="1" max="4" step="1"><small id="ramHint">Максимум для этого ПК: 4 ГБ</small></article>
+      </div>
+      <div class="install-column"><div class="section-title"><div><p class="eyebrow">ПЕРВЫЙ ЗАПУСК</p><h2>Подготовка игры</h2></div><span>3 ШАГА</span></div><div class="install-cards"><button id="java" class="install-card"><span class="number">01</span><span class="card-icon">☕</span><strong>Установить Java 8</strong><small>Нужна для работы Minecraft</small><i>→</i></button><button id="minecraft" class="install-card"><span class="number">02</span><span class="card-icon">◈</span><strong>Установить Minecraft</strong><small>Игра, Forge и моды одной кнопкой</small><i>→</i></button><button id="play" class="install-card play-card"><span class="number">03</span><span class="card-icon">▶</span><strong>Играть</strong><small>Запустить Minecraft и сборку Baranus</small><i>→</i></button></div><div class="status"><div><span id="status">Сначала установи Java 8</span><span id="progressText">0%</span></div><div class="progress"><div id="progressFill"></div></div></div></div>
+    </section>
+    <footer><span>BARANUS LAUNCHER · VERSION <b>0.1</b></span><button id="update" hidden>ДОСТУПНО ОБНОВЛЕНИЕ</button><details><summary>ЛОГ</summary><pre id="log"></pre></details></footer>
+  </main>
+  <aside id="settingsPanel" hidden><b>НАСТРОЙКИ</b><p>Скоро здесь появятся дополнительные параметры.</p></aside>
+  <div id="nameModal" class="modal" hidden><div class="modalCard"><b>BARANUS / PROFILE</b><p>Напишите свой никнейм</p><input id="firstNickname" maxlength="16" placeholder="Player" autofocus><small>3–16 латинских букв, цифр или _</small><button id="firstNicknameSave">Продолжить</button></div></div>
+  <script src="renderer.js"></script>
+</body></html>
