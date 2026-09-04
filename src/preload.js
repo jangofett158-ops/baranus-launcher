@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('launcher', {
   installDependencies: () => ipcRenderer.invoke('install-dependencies'),
   installMinecraft: (settings) => ipcRenderer.invoke('install-minecraft', settings),
   setRam: (ramGb) => ipcRenderer.invoke('set-ram', ramGb),
+  setNickname: (nickname) => ipcRenderer.invoke('set-nickname', nickname),
   checkUpdate: () => ipcRenderer.invoke('check-update'),
   applyUpdate: () => ipcRenderer.invoke('apply-update'),
   openMods: () => ipcRenderer.invoke('open-mods'),

@@ -50,19 +50,36 @@ function ensureDirectories() {
   [MODS_DIR, SHADERS_DIR, RESOURCEPACKS_DIR].forEach((dir) => fs.mkdirSync(dir, { recursive: true }));
 }
 
-function getRamGb() {
+function readSettings() {
   try {
-    const saved = Number(JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf8')).ramGb);
-    if (Number.isInteger(saved) && saved >= 1 && saved <= MAX_RAM_GB) return saved;
-  } catch (_) { /* Use the default when settings do not exist. */ }
+    return JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf8'));
+  } catch (_) { return {}; }
+}
+
+function writeSettings(changes) {
+  fs.mkdirSync(GAME_DIR, { recursive: true });
+  fs.writeFileSync(SETTINGS_PATH, JSON.stringify({ ...readSettings(), ...changes }, null, 2));
+}
+
+function getRamGb() {
+  const saved = Number(readSettings().ramGb);
+  if (Number.isInteger(saved) && saved >= 1 && saved <= MAX_RAM_GB) return saved;
   return Math.min(4, MAX_RAM_GB);
 }
 
 function saveRamGb(value) {
   const ramGb = Math.max(1, Math.min(MAX_RAM_GB, Math.floor(Number(value) || 4)));
-  fs.mkdirSync(GAME_DIR, { recursive: true });
-  fs.writeFileSync(SETTINGS_PATH, JSON.stringify({ ramGb }, null, 2));
+  writeSettings({ ramGb });
   return ramGb;
+}
+
+function getNickname() { return String(readSettings().nickname || ''); }
+
+function saveNickname(value) {
+  const nickname = String(value || '').trim();
+  if (!/^[A-Za-z0-9_]{3,16}$/.test(nickname)) throw new Error('Имя: 3–16 латинских букв, цифр или _.');
+  writeSettings({ nickname });
+  return nickname;
 }
 
 function fetchBuffer(url, progress) {
@@ -269,10 +286,11 @@ function createWindow() {
 app.whenReady().then(() => { ensureDirectories(); createWindow(); });
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
 
-ipcMain.handle('game-info', () => ({ gameDir: GAME_DIR, modsDir: MODS_DIR, shadersDir: SHADERS_DIR, resourcepacksDir: RESOURCEPACKS_DIR, forge: FORGE_VERSION, javaPath: fs.existsSync(JAVA_EXE) ? JAVA_EXE : '', ramGb: getRamGb(), maxRamGb: MAX_RAM_GB, version: APP_VERSION }));
+ipcMain.handle('game-info', () => ({ gameDir: GAME_DIR, modsDir: MODS_DIR, shadersDir: SHADERS_DIR, resourcepacksDir: RESOURCEPACKS_DIR, forge: FORGE_VERSION, javaPath: fs.existsSync(JAVA_EXE) ? JAVA_EXE : '', ramGb: getRamGb(), maxRamGb: MAX_RAM_GB, nickname: getNickname(), version: APP_VERSION }));
 ipcMain.handle('check-update', () => checkForUpdate());
 ipcMain.handle('apply-update', () => applyUpdate());
 ipcMain.handle('set-ram', (_event, ramGb) => saveRamGb(ramGb));
+ipcMain.handle('set-nickname', (_event, nickname) => saveNickname(nickname));
 ipcMain.handle('open-mods', () => { ensureDirectories(); return shell.openPath(MODS_DIR); });
 ipcMain.handle('open-shaders', () => { ensureDirectories(); return shell.openPath(SHADERS_DIR); });
 ipcMain.handle('open-resourcepacks', () => { ensureDirectories(); return shell.openPath(RESOURCEPACKS_DIR); });
