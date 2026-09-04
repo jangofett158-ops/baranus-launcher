@@ -7,6 +7,7 @@ const ram = $('ram');
 const ramValue = $('ramValue');
 const ramHint = $('ramHint');
 const update = $('update');
+const version = $('version');
 
 window.launcher.info().then((info) => {
   status.textContent = info.javaPath ? 'Java 8 готова. Установи Minecraft, затем нажми «Играть».' : 'Сначала установи Java 8.';
@@ -14,6 +15,7 @@ window.launcher.info().then((info) => {
   ram.value = info.ramGb;
   ramValue.textContent = `${info.ramGb} ГБ`;
   ramHint.textContent = `Максимум для этого ПК: ${info.maxRamGb} ГБ`;
+  version.textContent = `v${info.version}`;
   window.launcher.checkUpdate().then((release) => {
     if (!release) return;
     update.hidden = false;
