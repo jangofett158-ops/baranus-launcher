@@ -1,6 +1,6 @@
 {
   "name": "forge-1122-launcher",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Minimal launcher for Minecraft Forge 1.12.2",
   "main": "src/main.js",
   "scripts": {
@@ -41,11 +41,12 @@
       "!baranus-dependencies/**",
       "!baranus-combined/**",
       "!baranus-auto-update/**",
+      "!baranus-test-release/**",
       "!dist/**",
       "!build*.log"
     ],
     "directories": {
-      "output": "baranus-auto-update"
+      "output": "baranus-test-release"
     },
     "win": {
       "target": "portable",
