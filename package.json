@@ -1,0 +1,62 @@
+{
+  "name": "forge-1122-launcher",
+  "version": "0.1.1",
+  "description": "Minimal launcher for Minecraft Forge 1.12.2",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --win portable"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "minecraft-launcher-core": "^3.18.0"
+  },
+  "devDependencies": {
+    "electron": "^35.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "com.baranus.launcher",
+    "productName": "Baranus Launcher",
+    "compression": "store",
+    "files": [
+      "src/**/*",
+      "package.json",
+      "!release*/**",
+      "!final-build/**",
+      "!with-mods/**",
+      "!fixed-build/**",
+      "!visual-build/**",
+      "!download-fix/**",
+      "!download-final/**",
+      "!baranus-build/**",
+      "!baranus-optifine/**",
+      "!baranus-ui/**",
+      "!baranus-rebuild/**",
+      "!baranus-rebuild-final/**",
+      "!baranus-install-fix/**",
+      "!baranus-button-fix/**",
+      "!baranus-launchwrapper-fix/**",
+      "!baranus-ram/**",
+      "!baranus-dependencies/**",
+      "!baranus-combined/**",
+      "!dist/**",
+      "!build*.log"
+    ],
+    "directories": {
+      "output": "baranus-combined"
+    },
+    "win": {
+      "target": "portable",
+      "icon": "build/icon.ico",
+      "signExecutable": false
+    },
+    "portable": {
+      "artifactName": "Baranus-Launcher.exe"
+    }
+  },
+  "allowScripts": {
+    "electron@35.7.5": true,
+    "electron-winstaller@5.4.0": true
+  }
+}
