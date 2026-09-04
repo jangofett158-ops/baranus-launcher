@@ -40,11 +40,12 @@
       "!baranus-ram/**",
       "!baranus-dependencies/**",
       "!baranus-combined/**",
+      "!baranus-auto-update/**",
       "!dist/**",
       "!build*.log"
     ],
     "directories": {
-      "output": "baranus-combined"
+      "output": "baranus-auto-update"
     },
     "win": {
       "target": "portable",
