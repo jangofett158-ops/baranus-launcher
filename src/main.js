@@ -7,6 +7,7 @@ const os = require('os');
 const AdmZip = require('adm-zip');
 const { Client, Authenticator } = require('minecraft-launcher-core');
 const { spawn } = require('child_process');
+const { autoUpdater } = require('electron-updater');
 
 const GAME_DIR = path.join(app.getPath('documents'), 'Forge-1.12.2');
 const MODS_DIR = path.join(GAME_DIR, 'mods');
@@ -40,6 +41,7 @@ const VISUALS = [
 let window;
 let running = false;
 let availableUpdate = null;
+let updaterConfigured = false;
 
 function emit(channel, payload) {
   if (!window || window.isDestroyed()) return;
@@ -113,7 +115,21 @@ function compareVersions(a, b) {
   return 0;
 }
 
-async function checkForUpdate() {
+function isPortableBuild() {
+  return Boolean(process.env.PORTABLE_EXECUTABLE_FILE);
+}
+
+function configureInstallerUpdater() {
+  if (updaterConfigured) return;
+  updaterConfigured = true;
+  autoUpdater.autoDownload = false;
+  autoUpdater.autoInstallOnAppQuit = false;
+  autoUpdater.on('download-progress', (progress) => {
+    emit('progress', { value: progress.percent || 0, indeterminate: false });
+  });
+}
+
+async function checkPortableUpdate() {
   try {
     const release = JSON.parse((await fetchBuffer(UPDATE_API)).toString('utf8'));
     // Prefer the installer: it can update safely even when the launcher lives
@@ -133,9 +149,35 @@ async function checkForUpdate() {
   }
 }
 
+async function checkForUpdate() {
+  // NSIS installations use electron-updater. It understands GitHub release
+  // metadata, checks hashes, and replaces files after the application exits.
+  if (app.isPackaged && !isPortableBuild()) {
+    try {
+      configureInstallerUpdater();
+      const result = await autoUpdater.checkForUpdates();
+      const info = result?.updateInfo;
+      if (!info?.version || compareVersions(info.version, APP_VERSION) <= 0) return null;
+      availableUpdate = { version: info.version, installerUpdater: true };
+      return availableUpdate;
+    } catch (_) {
+      // A manual GitHub release without latest.yml can still use the direct
+      // installer download below instead of silently disabling updates.
+    }
+  }
+  return checkPortableUpdate();
+}
+
 async function applyUpdate() {
   if (!availableUpdate) throw new Error('Обновление не найдено. Нажми «Проверить обновления».');
   emit('status', `Скачиваем Baranus Launcher ${availableUpdate.version}…`);
+  if (availableUpdate.installerUpdater) {
+    configureInstallerUpdater();
+    await autoUpdater.downloadUpdate();
+    emit('status', 'Обновление скачано. Перезапускаем лаунчер…');
+    autoUpdater.quitAndInstall(false, true);
+    return;
+  }
   const suffix = availableUpdate.installer ? 'Setup' : 'Portable';
   const updateFile = path.join(app.getPath('temp'), `Baranus-Launcher-${suffix}-${availableUpdate.version}.exe`);
   const data = await fetchBuffer(availableUpdate.url, (received, total) => emit('progress', { value: total ? (received / total) * 100 : 0, indeterminate: !total }));
