@@ -26,6 +26,7 @@ const LAUNCHWRAPPER_SHA1 = '111e7bea9c968cdb3d06ef4632bf7ff0824d0f36';
 const APP_VERSION = require('../package.json').version;
 const UPDATE_API = 'https://api.github.com/repos/jangofett158-ops/baranus-launcher/releases/latest';
 const SETTINGS_PATH = path.join(GAME_DIR, 'baranus-settings.json');
+const MANAGED_FILES_PATH = path.join(GAME_DIR, '.baranus-managed-files.json');
 const MAX_RAM_GB = Math.max(1, Math.min(16, Math.floor(os.totalmem() / 1024 ** 3) - 2));
 const MODS = [
   { name: 'OptiFine HD U G5', file: 'OptiFine_1.12.2_HD_U_G5.jar', optifine: true },
@@ -61,6 +62,27 @@ function readSettings() {
 function writeSettings(changes) {
   fs.mkdirSync(GAME_DIR, { recursive: true });
   fs.writeFileSync(SETTINGS_PATH, JSON.stringify({ ...readSettings(), ...changes }, null, 2));
+}
+
+function readManagedFiles() {
+  try { return JSON.parse(fs.readFileSync(MANAGED_FILES_PATH, 'utf8')).files || []; }
+  catch (_) { return []; }
+}
+
+function syncManagedFiles(files) {
+  const previous = readManagedFiles();
+  const next = files.map((file) => path.resolve(file));
+  // Only files that a prior launcher version recorded as managed are removed.
+  // Manually added mods and resource packs are never touched.
+  for (const file of previous) {
+    if (!next.includes(path.resolve(file))) fs.rmSync(file, { force: true });
+  }
+  fs.writeFileSync(MANAGED_FILES_PATH, JSON.stringify({ files: next }, null, 2));
+}
+
+function getContentState() {
+  if (!fs.existsSync(JAVA_EXE) || !fs.existsSync(MINECRAFT_INSTALL_MARKER)) return 'install';
+  return readSettings().contentVersion === APP_VERSION ? 'play' : 'sync';
 }
 
 function getRamGb() {
@@ -268,9 +290,29 @@ async function installDependencies() {
   await installVisuals();
   await getForgeInstaller();
   await ensureLaunchWrapper();
+  syncManagedFiles([
+    ...MODS.map((mod) => path.join(MODS_DIR, mod.file)),
+    ...VISUALS.map((asset) => path.join(asset.directory, asset.file))
+  ]);
   fs.writeFileSync(DEPENDENCIES_INSTALL_MARKER, 'Forge, mods, OptiFine and visual packs were installed by Baranus Launcher.');
   emit('progress', { value: 100, indeterminate: false });
   emit('status', 'Зависимости установлены. Теперь установи Minecraft.');
+}
+
+async function runMainAction(nickname, ramGb) {
+  const state = getContentState();
+  if (state === 'play') return prepareMinecraft(nickname, true, saveRamGb(ramGb));
+  if (state === 'install') {
+    emit('status', 'Подготавливаем Baranus Launcher: Java, Minecraft и сборка…');
+    await getBundledJava();
+  } else {
+    emit('status', 'Проверяем и обновляем файлы сборки…');
+  }
+  await installDependencies();
+  await prepareMinecraft(nickname, false, saveRamGb(ramGb));
+  writeSettings({ contentVersion: APP_VERSION });
+  emit('status', state === 'install' ? 'Сборка установлена. Теперь можно играть.' : 'Файлы сборки обновлены. Теперь можно играть.');
+  return { state: 'ready' };
 }
 
 async function prepareMinecraft(nickname, startAfterInstall = true, ramGb = getRamGb()) {
@@ -345,7 +387,7 @@ function createWindow() {
 app.whenReady().then(() => { ensureDirectories(); createWindow(); });
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
 
-ipcMain.handle('game-info', () => ({ gameDir: GAME_DIR, modsDir: MODS_DIR, shadersDir: SHADERS_DIR, resourcepacksDir: RESOURCEPACKS_DIR, forge: FORGE_VERSION, javaPath: fs.existsSync(JAVA_EXE) ? JAVA_EXE : '', ramGb: getRamGb(), maxRamGb: MAX_RAM_GB, nickname: getNickname(), version: APP_VERSION }));
+ipcMain.handle('game-info', () => ({ gameDir: GAME_DIR, modsDir: MODS_DIR, shadersDir: SHADERS_DIR, resourcepacksDir: RESOURCEPACKS_DIR, forge: FORGE_VERSION, javaPath: fs.existsSync(JAVA_EXE) ? JAVA_EXE : '', ramGb: getRamGb(), maxRamGb: MAX_RAM_GB, nickname: getNickname(), version: APP_VERSION, contentState: getContentState() }));
 ipcMain.handle('check-update', () => checkForUpdate());
 ipcMain.handle('apply-update', () => applyUpdate());
 ipcMain.handle('set-ram', (_event, ramGb) => saveRamGb(ramGb));
@@ -372,6 +414,14 @@ ipcMain.handle('install-minecraft', async (_event, { nickname, ramGb }) => {
   if (!/^[A-Za-z0-9_]{3,16}$/.test(nickname || '')) throw new Error('Ник: 3–16 латинских букв, цифр или _.');
   running = true;
   try { await prepareMinecraft(nickname, false, saveRamGb(ramGb)); }
+  catch (error) { emit('launch-error', error.message || String(error)); throw error; }
+  finally { running = false; }
+});
+ipcMain.handle('main-action', async (_event, { nickname, ramGb }) => {
+  if (running) throw new Error('Дождись завершения текущей операции.');
+  if (!/^[A-Za-z0-9_]{3,16}$/.test(nickname || '')) throw new Error('Ник: 3–16 латинских букв, цифр или _.');
+  running = true;
+  try { return await runMainAction(nickname, ramGb); }
   catch (error) { emit('launch-error', error.message || String(error)); throw error; }
   finally { running = false; }
 });
