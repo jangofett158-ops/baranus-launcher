@@ -7,6 +7,7 @@ const os = require('os');
 const AdmZip = require('adm-zip');
 const { Client, Authenticator } = require('minecraft-launcher-core');
 const { spawn } = require('child_process');
+const { autoUpdater } = require('electron-updater');
 
 const GAME_DIR = path.join(app.getPath('documents'), 'Forge-1.12.2');
 const MODS_DIR = path.join(GAME_DIR, 'mods');
@@ -40,6 +41,7 @@ const VISUALS = [
 let window;
 let running = false;
 let availableUpdate = null;
+let updaterConfigured = false;
 
 function emit(channel, payload) {
   if (!window || window.isDestroyed()) return;
@@ -50,19 +52,36 @@ function ensureDirectories() {
   [MODS_DIR, SHADERS_DIR, RESOURCEPACKS_DIR].forEach((dir) => fs.mkdirSync(dir, { recursive: true }));
 }
 
-function getRamGb() {
+function readSettings() {
   try {
-    const saved = Number(JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf8')).ramGb);
-    if (Number.isInteger(saved) && saved >= 1 && saved <= MAX_RAM_GB) return saved;
-  } catch (_) { /* Use the default when settings do not exist. */ }
+    return JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf8'));
+  } catch (_) { return {}; }
+}
+
+function writeSettings(changes) {
+  fs.mkdirSync(GAME_DIR, { recursive: true });
+  fs.writeFileSync(SETTINGS_PATH, JSON.stringify({ ...readSettings(), ...changes }, null, 2));
+}
+
+function getRamGb() {
+  const saved = Number(readSettings().ramGb);
+  if (Number.isInteger(saved) && saved >= 1 && saved <= MAX_RAM_GB) return saved;
   return Math.min(4, MAX_RAM_GB);
 }
 
 function saveRamGb(value) {
   const ramGb = Math.max(1, Math.min(MAX_RAM_GB, Math.floor(Number(value) || 4)));
-  fs.mkdirSync(GAME_DIR, { recursive: true });
-  fs.writeFileSync(SETTINGS_PATH, JSON.stringify({ ramGb }, null, 2));
+  writeSettings({ ramGb });
   return ramGb;
+}
+
+function getNickname() { return String(readSettings().nickname || ''); }
+
+function saveNickname(value) {
+  const nickname = String(value || '').trim();
+  if (!/^[A-Za-z0-9_]{3,16}$/.test(nickname)) throw new Error('Имя: 3–16 латинских букв, цифр или _.');
+  writeSettings({ nickname });
+  return nickname;
 }
 
 function fetchBuffer(url, progress) {
@@ -96,28 +115,85 @@ function compareVersions(a, b) {
   return 0;
 }
 
-async function checkForUpdate() {
+function isPortableBuild() {
+  return Boolean(process.env.PORTABLE_EXECUTABLE_FILE);
+}
+
+function configureInstallerUpdater() {
+  if (updaterConfigured) return;
+  updaterConfigured = true;
+  autoUpdater.autoDownload = false;
+  autoUpdater.autoInstallOnAppQuit = false;
+  autoUpdater.on('download-progress', (progress) => {
+    emit('progress', { value: progress.percent || 0, indeterminate: false });
+  });
+}
+
+async function checkPortableUpdate() {
   try {
     const release = JSON.parse((await fetchBuffer(UPDATE_API)).toString('utf8'));
-    const asset = release.assets?.find((item) => item.name === 'Baranus-Launcher.exe');
+    // Prefer the installer: it can update safely even when the launcher lives
+    // in Program Files. Keep the portable asset as a fallback for old releases.
+    const asset = release.assets?.find((item) => /^Baranus-Launcher-Setup-.*\.exe$/i.test(item.name)) ||
+      release.assets?.find((item) => item.name === 'Baranus-Launcher.exe');
     if (!asset || !release.tag_name || compareVersions(release.tag_name, APP_VERSION) <= 0) return null;
-    availableUpdate = { version: String(release.tag_name).replace(/^v/, ''), url: asset.browser_download_url, notes: release.body || '' };
+    availableUpdate = {
+      version: String(release.tag_name).replace(/^v/, ''),
+      url: asset.browser_download_url,
+      installer: /^Baranus-Launcher-Setup-.*\.exe$/i.test(asset.name),
+      notes: release.body || ''
+    };
     return availableUpdate;
   } catch (_) {
     return null;
   }
 }
 
+async function checkForUpdate() {
+  // NSIS installations use electron-updater. It understands GitHub release
+  // metadata, checks hashes, and replaces files after the application exits.
+  if (app.isPackaged && !isPortableBuild()) {
+    try {
+      configureInstallerUpdater();
+      const result = await autoUpdater.checkForUpdates();
+      const info = result?.updateInfo;
+      if (!info?.version || compareVersions(info.version, APP_VERSION) <= 0) return null;
+      availableUpdate = { version: info.version, installerUpdater: true };
+      return availableUpdate;
+    } catch (_) {
+      // A manual GitHub release without latest.yml can still use the direct
+      // installer download below instead of silently disabling updates.
+    }
+  }
+  return checkPortableUpdate();
+}
+
 async function applyUpdate() {
   if (!availableUpdate) throw new Error('Обновление не найдено. Нажми «Проверить обновления».');
   emit('status', `Скачиваем Baranus Launcher ${availableUpdate.version}…`);
-  const updateFile = path.join(app.getPath('temp'), `Baranus-Launcher-${availableUpdate.version}.exe`);
+  if (availableUpdate.installerUpdater) {
+    configureInstallerUpdater();
+    await autoUpdater.downloadUpdate();
+    emit('status', 'Обновление скачано. Перезапускаем лаунчер…');
+    autoUpdater.quitAndInstall(false, true);
+    return;
+  }
+  const suffix = availableUpdate.installer ? 'Setup' : 'Portable';
+  const updateFile = path.join(app.getPath('temp'), `Baranus-Launcher-${suffix}-${availableUpdate.version}.exe`);
   const data = await fetchBuffer(availableUpdate.url, (received, total) => emit('progress', { value: total ? (received / total) * 100 : 0, indeterminate: !total }));
   if (data.subarray(0, 2).toString('ascii') !== 'MZ') throw new Error('Файл обновления повреждён.');
   fs.writeFileSync(updateFile, data);
-  const currentExe = process.env.PORTABLE_EXECUTABLE_FILE || process.execPath;
-  const scriptPath = path.join(app.getPath('temp'), 'baranus-update.cmd');
-  const script = `@echo off\r\ntimeout /t 3 /nobreak >nul\r\ncopy /y "${updateFile}" "${currentExe}" >nul\r\nstart "" "${currentExe}"\r\ndel "%~f0"\r\n`;
+  const scriptPath = path.join(app.getPath('temp'), `baranus-update-${Date.now()}.cmd`);
+  let script;
+  if (availableUpdate.installer) {
+    // Start the installer only after Electron releases its own executable.
+    script = `@echo off\r\ntimeout /t 2 /nobreak >nul\r\nstart "" "${updateFile}"\r\ndel "%~f0"\r\n`;
+  } else {
+    // Compatibility path for portable builds. Retry because Windows can keep
+    // the old executable locked for a few seconds after app.quit().
+    const currentExe = process.env.PORTABLE_EXECUTABLE_FILE || process.execPath;
+    script = `@echo off\r\nset "SOURCE=${updateFile}"\r\nset "TARGET=${currentExe}"\r\nfor /L %%i in (1,1,12) do (\r\ntimeout /t 1 /nobreak >nul\r\ncopy /y "%SOURCE%" "%TARGET%" >nul && goto started\r\n)\r\nstart "" "%SOURCE%"\r\ngoto cleanup\r\n:started\r\nstart "" "%TARGET%"\r\n:cleanup\r\ndel "%~f0"\r\n`;
+  }
   fs.writeFileSync(scriptPath, script, 'utf8');
   spawn('cmd.exe', ['/c', scriptPath], { detached: true, stdio: 'ignore' }).unref();
   app.quit();
@@ -269,10 +345,11 @@ function createWindow() {
 app.whenReady().then(() => { ensureDirectories(); createWindow(); });
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
 
-ipcMain.handle('game-info', () => ({ gameDir: GAME_DIR, modsDir: MODS_DIR, shadersDir: SHADERS_DIR, resourcepacksDir: RESOURCEPACKS_DIR, forge: FORGE_VERSION, javaPath: fs.existsSync(JAVA_EXE) ? JAVA_EXE : '', ramGb: getRamGb(), maxRamGb: MAX_RAM_GB, version: APP_VERSION }));
+ipcMain.handle('game-info', () => ({ gameDir: GAME_DIR, modsDir: MODS_DIR, shadersDir: SHADERS_DIR, resourcepacksDir: RESOURCEPACKS_DIR, forge: FORGE_VERSION, javaPath: fs.existsSync(JAVA_EXE) ? JAVA_EXE : '', ramGb: getRamGb(), maxRamGb: MAX_RAM_GB, nickname: getNickname(), version: APP_VERSION }));
 ipcMain.handle('check-update', () => checkForUpdate());
 ipcMain.handle('apply-update', () => applyUpdate());
 ipcMain.handle('set-ram', (_event, ramGb) => saveRamGb(ramGb));
+ipcMain.handle('set-nickname', (_event, nickname) => saveNickname(nickname));
 ipcMain.handle('open-mods', () => { ensureDirectories(); return shell.openPath(MODS_DIR); });
 ipcMain.handle('open-shaders', () => { ensureDirectories(); return shell.openPath(SHADERS_DIR); });
 ipcMain.handle('open-resourcepacks', () => { ensureDirectories(); return shell.openPath(RESOURCEPACKS_DIR); });

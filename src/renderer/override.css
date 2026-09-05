@@ -1,0 +1,16 @@
+/* The play action belongs to the preparation panel in this layout. */
+.play-card {
+  grid-column: 1 / -1;
+  min-height: 68px;
+  grid-template-columns: 39px 1fr;
+  background: linear-gradient(100deg, #173d78, #112753);
+  box-shadow: inset 0 0 26px #4388ff16;
+}
+
+.play-card:hover:not(:disabled) {
+  background: linear-gradient(100deg, #1b4b90, #153463);
+}
+
+.play-card .card-icon { background: #72b8ff; color: #071831; }
+.play-card strong { font-size: 15px; }
+.play-card .number, .play-card i { color: #a4d7ff; }
