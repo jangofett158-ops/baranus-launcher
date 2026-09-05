@@ -116,9 +116,17 @@ function compareVersions(a, b) {
 async function checkForUpdate() {
   try {
     const release = JSON.parse((await fetchBuffer(UPDATE_API)).toString('utf8'));
-    const asset = release.assets?.find((item) => item.name === 'Baranus-Launcher.exe');
+    // Prefer the installer: it can update safely even when the launcher lives
+    // in Program Files. Keep the portable asset as a fallback for old releases.
+    const asset = release.assets?.find((item) => /^Baranus-Launcher-Setup-.*\.exe$/i.test(item.name)) ||
+      release.assets?.find((item) => item.name === 'Baranus-Launcher.exe');
     if (!asset || !release.tag_name || compareVersions(release.tag_name, APP_VERSION) <= 0) return null;
-    availableUpdate = { version: String(release.tag_name).replace(/^v/, ''), url: asset.browser_download_url, notes: release.body || '' };
+    availableUpdate = {
+      version: String(release.tag_name).replace(/^v/, ''),
+      url: asset.browser_download_url,
+      installer: /^Baranus-Launcher-Setup-.*\.exe$/i.test(asset.name),
+      notes: release.body || ''
+    };
     return availableUpdate;
   } catch (_) {
     return null;
@@ -128,13 +136,22 @@ async function checkForUpdate() {
 async function applyUpdate() {
   if (!availableUpdate) throw new Error('Обновление не найдено. Нажми «Проверить обновления».');
   emit('status', `Скачиваем Baranus Launcher ${availableUpdate.version}…`);
-  const updateFile = path.join(app.getPath('temp'), `Baranus-Launcher-${availableUpdate.version}.exe`);
+  const suffix = availableUpdate.installer ? 'Setup' : 'Portable';
+  const updateFile = path.join(app.getPath('temp'), `Baranus-Launcher-${suffix}-${availableUpdate.version}.exe`);
   const data = await fetchBuffer(availableUpdate.url, (received, total) => emit('progress', { value: total ? (received / total) * 100 : 0, indeterminate: !total }));
   if (data.subarray(0, 2).toString('ascii') !== 'MZ') throw new Error('Файл обновления повреждён.');
   fs.writeFileSync(updateFile, data);
-  const currentExe = process.env.PORTABLE_EXECUTABLE_FILE || process.execPath;
-  const scriptPath = path.join(app.getPath('temp'), 'baranus-update.cmd');
-  const script = `@echo off\r\ntimeout /t 3 /nobreak >nul\r\ncopy /y "${updateFile}" "${currentExe}" >nul\r\nstart "" "${currentExe}"\r\ndel "%~f0"\r\n`;
+  const scriptPath = path.join(app.getPath('temp'), `baranus-update-${Date.now()}.cmd`);
+  let script;
+  if (availableUpdate.installer) {
+    // Start the installer only after Electron releases its own executable.
+    script = `@echo off\r\ntimeout /t 2 /nobreak >nul\r\nstart "" "${updateFile}"\r\ndel "%~f0"\r\n`;
+  } else {
+    // Compatibility path for portable builds. Retry because Windows can keep
+    // the old executable locked for a few seconds after app.quit().
+    const currentExe = process.env.PORTABLE_EXECUTABLE_FILE || process.execPath;
+    script = `@echo off\r\nset "SOURCE=${updateFile}"\r\nset "TARGET=${currentExe}"\r\nfor /L %%i in (1,1,12) do (\r\ntimeout /t 1 /nobreak >nul\r\ncopy /y "%SOURCE%" "%TARGET%" >nul && goto started\r\n)\r\nstart "" "%SOURCE%"\r\ngoto cleanup\r\n:started\r\nstart "" "%TARGET%"\r\n:cleanup\r\ndel "%~f0"\r\n`;
+  }
   fs.writeFileSync(scriptPath, script, 'utf8');
   spawn('cmd.exe', ['/c', scriptPath], { detached: true, stdio: 'ignore' }).unref();
   app.quit();

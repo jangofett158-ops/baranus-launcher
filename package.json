@@ -1,11 +1,11 @@
 {
   "name": "forge-1122-launcher",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Minimal launcher for Minecraft Forge 1.12.2",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
-    "pack": "electron-builder --win portable"
+    "pack": "electron-builder --win portable nsis"
   },
   "dependencies": {
     "adm-zip": "^0.5.16",
@@ -43,19 +43,28 @@
       "!baranus-auto-update/**",
       "!baranus-test-release/**",
       "!baranus-v017/**",
+      "!baranus-v018/**",
       "!dist/**",
       "!build*.log"
     ],
     "directories": {
-      "output": "baranus-v017"
+      "output": "baranus-v018"
     },
     "win": {
-      "target": "portable",
+      "target": [
+        "portable",
+        "nsis"
+      ],
       "icon": "build/icon.ico",
       "signExecutable": false
     },
     "portable": {
       "artifactName": "Baranus-Launcher.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "Baranus-Launcher-Setup-${version}.exe"
     }
   },
   "allowScripts": {
