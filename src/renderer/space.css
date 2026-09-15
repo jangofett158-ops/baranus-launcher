@@ -8,3 +8,36 @@ body{background:#02050b}.app{background:#02050b}.sidebar{background:linear-gradi
 @media (max-height:760px){.quick-settings{bottom:172px}.planet-scene{top:16%;transform:scale(.82);transform-origin:top right}}
 .home-page{display:contents}.future-page{position:relative;z-index:3;margin:auto 0;padding:6% 0 8% 7%;max-width:720px}.future-page h1{margin:0;font:600 clamp(40px,5vw,72px)/1 Unbounded;letter-spacing:-3px}.future-page h1 span{color:#9dcaff}.future-page>p:not(.eyebrow){max-width:470px;color:#bfd5ed;font-size:15px;line-height:1.6}.future-card{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:2px 14px;width:310px;margin-top:30px;padding:20px;border:1px solid #74a6e566;border-radius:17px;background:#091a31bf;box-shadow:0 16px 35px #0006}.future-card b{grid-row:span 2;color:#d1e9ff;font:600 31px Unbounded;letter-spacing:-2px}.future-card span{color:#91c5ff;font:600 11px Unbounded;letter-spacing:1px}.future-card small{color:#a9bfd7;font-size:10px;line-height:1.4}
 @keyframes drift{to{background-position:210px 170px,-270px 210px,180px -160px,-300px 240px,250px -190px,-220px 180px,290px -210px,-230px 200px,320px -250px,-180px 170px}}
+.stars,.planet-scene{pointer-events:none}
+
+/* Keep the profile controls above the main action in both a window and Full HD. */
+.quick-settings{right:clamp(32px,4vw,76px);bottom:clamp(210px,23vh,264px);width:clamp(280px,24vw,320px)}
+@media (max-width:1180px){.quick-settings{right:36px;bottom:216px;width:290px}.bottom-area{gap:24px}.main-action{min-width:290px}}
+@media (max-height:760px){.quick-settings{bottom:190px}}
+
+/* An Earth-like planet: ocean, land, atmosphere and a night-side shadow. */
+.planet-scene{right:clamp(6%,9vw,12%);top:clamp(120px,18vh,210px);background:url('earth.svg') center/contain no-repeat;filter:drop-shadow(0 0 14px #63b4ff99) drop-shadow(0 0 36px #2768be88);box-shadow:0 0 54px #2d78d077}
+.planet-scene i,.planet-scene b{display:none}
+.planet-scene::before{content:'';position:absolute;inset:8px;border-radius:50%;background:radial-gradient(circle at 30% 25%,#ffffff99 0 2%,transparent 7%),radial-gradient(circle at 45% 36%,transparent 46%,#052a6a66 72%,#010916bb 100%);box-shadow:inset -25px -18px 30px #02102b88;pointer-events:none}
+.planet-scene::after{content:'';position:absolute;inset:5px;border:1px solid #dff2ffcc;border-radius:50%;box-shadow:0 0 12px #65b2ff99,0 0 28px #357fd666;pointer-events:none}
+
+/* The decorative planet is reserved for a full-size launcher window. */
+.planet-scene{display:none}
+.page-dot[data-page="1122"]{background:radial-gradient(circle at 29% 27%,#effaff 0 4%,transparent 5%),radial-gradient(circle at 65% 70%,#bde5ff 0 3%,transparent 4%),radial-gradient(circle at 55% 54%,#6faeff 0 28%,#285fae 30%,#0b1b3d 58%,#050b19 100%);box-shadow:inset -8px -8px 13px #020817aa,0 5px 14px #0a4b9e77}
+.page-dot[data-page="1122"]::after{content:'';display:block;width:33px;height:13px;margin:16px auto;border:1px solid #b9e1ff99;border-radius:50%;transform:rotate(-22deg)}
+.side-brand{cursor:pointer;background:#07111e;padding:0}.side-brand:hover{border-color:#b9dbff;box-shadow:0 0 15px #438ad966}
+.main-menu-page{position:relative;z-index:3;display:grid;flex:1;place-items:center;padding:8% 7%;background:radial-gradient(circle at 70% 45%,#10294b55,transparent 30%),#030914}.main-menu-intro{width:min(700px,100%);padding:46px;border:1px solid #416b9955;border-radius:22px;background:#061221aa;box-shadow:0 20px 60px #0008}.main-menu-intro h1{margin:0;color:#edf6ff;font:600 clamp(45px,6vw,84px)/1 Unbounded;letter-spacing:-4px}.main-menu-intro>p:not(.eyebrow){max-width:360px;margin:22px 0 0;color:#91add0;line-height:1.6}
+
+/* One shared layout; each navigation page gives it its own atmosphere. */
+body[data-theme="main"] .workspace{background:#02050b}body[data-theme="main"] .stars{display:none}body[data-theme="main"] .main-menu-page{background:#02050b}body[data-theme="main"] .main-menu-intro{border-color:#25384c66;background:#050a12cc}body[data-theme="main"] .planet-scene{display:none!important}
+body[data-theme="space"] .workspace{background:radial-gradient(circle at 78% 68%,#1e4e9455,transparent 30%),#030914}body[data-theme="space"] .sidebar{background:linear-gradient(#080d17,#1d2939)}
+body[data-theme="1165a"] .workspace{background:radial-gradient(circle at 74% 65%,#552a9d66,transparent 33%),#0b0618}body[data-theme="1165a"] .sidebar{background:linear-gradient(#100822,#342052)}body[data-theme="1165a"] .page-dot{background:linear-gradient(135deg,#9c72ff,#4a248e)}
+body[data-theme="1165b"] .workspace{background:radial-gradient(circle at 74% 65%,#1a735d66,transparent 33%),#041510}body[data-theme="1165b"] .sidebar{background:linear-gradient(#071c17,#1d4a3e)}body[data-theme="1165b"] .page-dot{background:linear-gradient(135deg,#66c79c,#167351)}
+body:not([data-theme="space"]) .planet-scene{display:none!important}
+@media (min-width:1500px) and (min-height:850px), (display-mode:fullscreen){
+  .planet-scene{display:block;right:clamp(7%,10vw,13%);top:clamp(125px,18vh,210px);background:radial-gradient(circle at 30% 24%,#e3f7ff99 0 3%,transparent 8%),radial-gradient(circle at 40% 35%,#69bbf3 0 46%,#235caa 68%,#071a43 100%);filter:drop-shadow(0 0 16px #75c9ffaa) drop-shadow(0 0 38px #276fd088);box-shadow:0 0 60px #347fdc88}
+  .planet-scene::before{display:block;inset:8px;background:radial-gradient(circle at 29% 22%,#fff9e6bb 0 2%,transparent 8%),radial-gradient(circle at 43% 38%,transparent 44%,#19091e77 74%,#08040dbb 100%);box-shadow:inset -28px -18px 35px #16061499}
+  .planet-scene::after{display:none}
+  .planet-scene i{display:none}
+  .planet-scene b{display:none}
+}
