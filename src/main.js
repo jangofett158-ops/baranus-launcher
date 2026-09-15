@@ -108,7 +108,7 @@ function saveNickname(value) {
 
 function fetchBuffer(url, progress) {
   return new Promise((resolve, reject) => {
-    https.get(url, { headers: { 'User-Agent': 'Forge-1122-Launcher' } }, (response) => {
+    const request = https.get(url, { headers: { 'User-Agent': 'Forge-1122-Launcher' } }, (response) => {
       if ([301, 302, 307, 308].includes(response.statusCode) && response.headers.location) {
         response.resume();
         return resolve(fetchBuffer(new URL(response.headers.location, url).toString(), progress));
@@ -123,7 +123,10 @@ function fetchBuffer(url, progress) {
       response.on('data', (chunk) => { chunks.push(chunk); received += chunk.length; progress?.(received, total); });
       response.on('end', () => resolve(Buffer.concat(chunks)));
       response.on('error', reject);
-    }).on('error', reject);
+    });
+    // A blocked mod host must not leave the main button disabled forever.
+    request.setTimeout(20000, () => request.destroy(new Error('Сервер загрузки не ответил за 20 секунд.')));
+    request.on('error', reject);
   });
 }
 
@@ -310,8 +313,18 @@ async function runMainAction(nickname, ramGb) {
   } else {
     // Minecraft is already installed. Re-running the legacy 1.12.2 installer
     // here could freeze the button on some PCs, so sync only managed content.
+    // A temporarily unavailable mod host must not prevent a working game from
+    // being launched after a launcher update.
     emit('status', 'Проверяем и обновляем файлы сборки…');
-    await installDependencies();
+    try {
+      await installDependencies();
+    } catch (error) {
+      const message = error.message || String(error);
+      emit('log', `Синхронизация не завершена: ${message}`);
+      writeSettings({ contentVersion: APP_VERSION });
+      emit('status', 'Часть файлов не обновилась, но игру можно запустить.');
+      return { state: 'ready', contentState: 'play', warning: message };
+    }
   }
   writeSettings({ contentVersion: APP_VERSION });
   emit('status', state === 'install' ? 'Сборка установлена. Теперь можно играть.' : 'Файлы сборки обновлены. Теперь можно играть.');
@@ -320,7 +333,6 @@ async function runMainAction(nickname, ramGb) {
 
 async function prepareMinecraft(nickname, startAfterInstall = true, ramGb = getRamGb()) {
   if (!fs.existsSync(JAVA_EXE)) throw new Error('Сначала нажми «Установить Java 8».');
-  if (!fs.existsSync(DEPENDENCIES_INSTALL_MARKER)) await installDependencies();
   const javaPath = JAVA_EXE;
   const forgeInstaller = FORGE_INSTALLER;
   if (!fs.existsSync(FORGE_CACHE_MARKER)) {
