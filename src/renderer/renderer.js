@@ -24,4 +24,19 @@ firstNickname.onkeydown = (event) => { if (event.key === 'Enter') $('firstNickna
 nickname.onchange = () => saveNickname(nickname.value).catch((error) => { status.textContent = `Ошибка: ${error.message}`; });
 ram.oninput = () => { ramValue.textContent = `${ram.value} ГБ`; }; ram.onchange = () => window.launcher.setRam(Number(ram.value));
 update.onclick = async () => { update.disabled = true; try { await window.launcher.applyUpdate(); } catch (error) { status.textContent = `Ошибка обновления: ${error.message}`; update.disabled = false; } };
-action.onclick = async () => { const launchedGame = contentState === 'play'; action.disabled = true; try { await saveNickname(nickname.value); const result = await window.launcher.mainAction({ nickname: nickname.value.trim(), ramGb: Number(ram.value) }); if (result?.state === 'ready') renderAction('play'); } catch (_) {} finally { if (!launchedGame) action.disabled = false; } };
+action.onclick = async () => { const launchedGame = contentState === 'play'; action.disabled = true; try { await saveNickname(nickname.value); const result = await window.launcher.mainAction({ nickname: nickname.value.trim(), ramGb: Number(ram.value) }); if (result?.state === 'ready') { renderAction('play'); status.textContent = 'Сборка готова к запуску.'; } } catch (error) { status.textContent = `Ошибка: ${error.message || error}`; progressText.textContent = 'ОШИБКА'; } finally { if (!launchedGame) action.disabled = false; } };
+
+const homePage = $('homePage');
+const futurePage = $('futurePage');
+const futurePageText = $('futurePageText');
+document.querySelectorAll('.page-dot').forEach((dot) => {
+  dot.onclick = () => {
+    const isHome = dot.dataset.page === '1122';
+    document.querySelectorAll('.page-dot').forEach((item) => item.classList.toggle('active', item === dot));
+    homePage.hidden = !isHome;
+    futurePage.hidden = isHome;
+    if (!isHome) futurePageText.textContent = dot.dataset.page === '1165a'
+      ? 'Первая страница Minecraft 1.16.5 Forge. Здесь будет отдельная сборка.'
+      : 'Вторая страница Minecraft 1.16.5 Forge. Здесь будет отдельная сборка.';
+  };
+});

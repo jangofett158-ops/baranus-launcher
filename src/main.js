@@ -305,14 +305,17 @@ async function runMainAction(nickname, ramGb) {
   if (state === 'install') {
     emit('status', 'Подготавливаем Baranus Launcher: Java, Minecraft и сборка…');
     await getBundledJava();
+    await installDependencies();
+    await prepareMinecraft(nickname, false, saveRamGb(ramGb));
   } else {
+    // Minecraft is already installed. Re-running the legacy 1.12.2 installer
+    // here could freeze the button on some PCs, so sync only managed content.
     emit('status', 'Проверяем и обновляем файлы сборки…');
+    await installDependencies();
   }
-  await installDependencies();
-  await prepareMinecraft(nickname, false, saveRamGb(ramGb));
   writeSettings({ contentVersion: APP_VERSION });
   emit('status', state === 'install' ? 'Сборка установлена. Теперь можно играть.' : 'Файлы сборки обновлены. Теперь можно играть.');
-  return { state: 'ready' };
+  return { state: 'ready', contentState: 'play' };
 }
 
 async function prepareMinecraft(nickname, startAfterInstall = true, ramGb = getRamGb()) {
