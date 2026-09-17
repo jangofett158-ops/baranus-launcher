@@ -410,6 +410,7 @@ ipcMain.handle('set-nickname', (_event, nickname) => saveNickname(nickname));
 ipcMain.handle('open-mods', () => { ensureDirectories(); return shell.openPath(MODS_DIR); });
 ipcMain.handle('open-shaders', () => { ensureDirectories(); return shell.openPath(SHADERS_DIR); });
 ipcMain.handle('open-resourcepacks', () => { ensureDirectories(); return shell.openPath(RESOURCEPACKS_DIR); });
+ipcMain.handle('open-telegram', () => shell.openExternal('https://t.me/baranus2'));
 ipcMain.handle('install-java', async () => {
   if (running) throw new Error('Дождись завершения текущей операции.');
   running = true;

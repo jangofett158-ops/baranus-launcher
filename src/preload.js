@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('launcher', {
   openMods: () => ipcRenderer.invoke('open-mods'),
   openShaders: () => ipcRenderer.invoke('open-shaders'),
   openResourcepacks: () => ipcRenderer.invoke('open-resourcepacks'),
+  openTelegram: () => ipcRenderer.invoke('open-telegram'),
   chooseJava: () => ipcRenderer.invoke('choose-java'),
   onStatus: (callback) => ipcRenderer.on('status', (_, value) => callback(value)),
   onProgress: (callback) => ipcRenderer.on('progress', (_, value) => callback(value)),
