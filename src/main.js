@@ -273,7 +273,7 @@ function configureInstallerUpdater() {
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = false;
   autoUpdater.on('download-progress', (progress) => {
-    emit('progress', { value: progress.percent || 0, indeterminate: false });
+    emit('progress', { scope: 'launcher-update', value: progress.percent || 0, indeterminate: false });
   });
 }
 
@@ -328,7 +328,7 @@ async function applyUpdate() {
   }
   const suffix = availableUpdate.installer ? 'Setup' : 'Portable';
   const updateFile = path.join(app.getPath('temp'), `Baranus-Launcher-${suffix}-${availableUpdate.version}.exe`);
-  const data = await fetchBuffer(availableUpdate.url, (received, total) => emit('progress', { value: total ? (received / total) * 100 : 0, indeterminate: !total }));
+  const data = await fetchBuffer(availableUpdate.url, (received, total) => emit('progress', { scope: 'launcher-update', value: total ? (received / total) * 100 : 0, indeterminate: !total }));
   if (data.subarray(0, 2).toString('ascii') !== 'MZ') throw new Error('Файл обновления повреждён.');
   fs.writeFileSync(updateFile, data);
   const scriptPath = path.join(app.getPath('temp'), `baranus-update-${Date.now()}.cmd`);

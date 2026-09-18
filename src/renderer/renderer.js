@@ -14,6 +14,7 @@ if (!window.launcher) {
 const status = $('status'), log = $('log'), fill = $('progressFill'), progressText = $('progressText');
 const ram = $('ram'), ramValue = $('ramValue'), ramHint = $('ramHint'), nickname = $('nickname');
 const update = $('update'), version = $('version'), greeting = $('greeting'), settingsPanel = $('settingsPanel');
+const launcherUpdateProgress = $('launcherUpdateProgress'), launcherUpdateFill = $('launcherUpdateFill'), launcherUpdateText = $('launcherUpdateText');
 const nameModal = $('nameModal'), firstNickname = $('firstNickname'), action = $('mainAction');
 const actionTitle = $('mainActionTitle'), actionHint = $('mainActionHint');
 const windowResolution = $('windowResolution'), fullscreen = $('fullscreen'), launchBehavior = $('launchBehavior');
@@ -47,10 +48,11 @@ function renderLauncherSettings(value = {}) { windowResolution.value = value.res
 async function saveLauncherSettings() { const saved = await window.launcher.setLauncherSettings({ resolution: windowResolution.value, fullscreen: fullscreen.checked, launchBehavior: launchBehavior.value }); renderLauncherSettings(saved); }
 function openSettings() { settingsPanel.hidden = false; requestAnimationFrame(() => settingsPanel.classList.add('is-open')); }
 function hideSettings() { settingsPanel.classList.remove('is-open'); window.setTimeout(() => { if (!settingsPanel.classList.contains('is-open')) settingsPanel.hidden = true; }, 180); }
+function renderLauncherUpdateProgress(value = 0, indeterminate = false) { launcherUpdateProgress.hidden = false; launcherUpdateFill.style.width = `${Math.max(0, Math.min(100, value || 0))}%`; launcherUpdateFill.classList.toggle('indeterminate', Boolean(indeterminate)); launcherUpdateText.textContent = indeterminate ? '…' : `${Math.round(value || 0)}%`; }
 async function saveNickname(value) { const name = await window.launcher.setNickname(value); nickname.value = name; showGreeting(name); return name; }
 window.launcher.info().then((info) => { ram.max = info.maxRamGb; ram.value = info.ramGb; ramValue.textContent = `${info.ramGb} ГБ`; ramHint.textContent = `Максимум: ${info.maxRamGb} ГБ`; version.textContent = `v${info.version}`; nickname.value = info.nickname; showGreeting(info.nickname); renderAction(info.contentState); renderLauncherSettings(info.launcherSettings); status.textContent = info.contentState === 'play' ? 'Сборка готова к запуску.' : info.contentState === 'sync' ? 'Доступно обновление файлов сборки.' : 'Нажми «Установить», чтобы подготовить сборку.'; showLauncherHome(); if (!info.nickname) { nameModal.hidden = false; nameModal.style.display = 'grid'; firstNickname.focus(); } else { startOnboardingIfNeeded(); } window.launcher.checkUpdate().then((release) => { if (release) { update.hidden = false; update.textContent = `ОБНОВИТЬ ДО ${release.version}`; } }); });
 window.launcher.onStatus((message) => status.textContent = message);
-window.launcher.onProgress(({ value, indeterminate }) => { fill.style.width = `${Math.max(0, Math.min(100, value || 0))}%`; fill.classList.toggle('indeterminate', Boolean(indeterminate)); progressText.textContent = indeterminate ? 'ПРОВЕРКА…' : `${Math.round(value || 0)}%`; });
+window.launcher.onProgress(({ scope, value, indeterminate }) => { if (scope === 'launcher-update') { renderLauncherUpdateProgress(value, indeterminate); return; } fill.style.width = `${Math.max(0, Math.min(100, value || 0))}%`; fill.classList.toggle('indeterminate', Boolean(indeterminate)); progressText.textContent = indeterminate ? 'ПРОВЕРКА…' : `${Math.round(value || 0)}%`; });
 window.launcher.onLog((message) => { log.textContent += `${message}\n`; log.scrollTop = log.scrollHeight; });
 window.launcher.onError((message) => { status.textContent = `Ошибка: ${message}`; progressText.textContent = 'ОШИБКА'; action.disabled = false; document.querySelector('details').open = true; });
 window.launcher.onFinished((code) => { status.textContent = `Игра завершена (код ${code}).`; action.disabled = false; });
@@ -64,7 +66,7 @@ $('firstNicknameSave').onclick = async () => { try { await saveNickname(firstNic
 firstNickname.onkeydown = (event) => { if (event.key === 'Enter') $('firstNicknameSave').click(); };
 nickname.onchange = () => saveNickname(nickname.value).catch((error) => { status.textContent = `Ошибка: ${error.message}`; });
 ram.oninput = () => { ramValue.textContent = `${ram.value} ГБ`; }; ram.onchange = () => window.launcher.setRam(Number(ram.value));
-update.onclick = async () => { update.disabled = true; try { await window.launcher.applyUpdate(); } catch (error) { status.textContent = `Ошибка обновления: ${error.message}`; update.disabled = false; } };
+update.onclick = async () => { update.disabled = true; renderLauncherUpdateProgress(0, true); try { await window.launcher.applyUpdate(); } catch (error) { status.textContent = `Ошибка обновления: ${error.message}`; launcherUpdateText.textContent = 'ОШИБКА'; launcherUpdateFill.classList.remove('indeterminate'); update.disabled = false; } };
 action.onclick = async () => { action.disabled = true; try { await saveNickname(nickname.value); const result = await window.launcher.mainAction({ nickname: nickname.value.trim(), ramGb: Number(ram.value) }); if (result?.state === 'ready') { renderAction('play'); status.textContent = result.warning ? 'Не все файлы обновились, но игру можно запустить.' : 'Сборка готова к запуску.'; } if (result?.state === 'launched') status.textContent = 'Minecraft запущен.'; } catch (error) { status.textContent = `Ошибка: ${error.message || error}`; progressText.textContent = 'ОШИБКА'; } finally { action.disabled = false; } };
 
 const homePage = $('homePage');
