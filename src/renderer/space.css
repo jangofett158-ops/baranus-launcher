@@ -124,10 +124,35 @@ body[data-theme="main"] .home-news-card time{color:#d0a35b}
 body[data-theme="main"] .home-news-heading{color:#f0d4a1}
 body[data-theme="main"] .home-support-row,body[data-theme="main"] .workspace>footer{color:#b9bdc4;border-color:#55514855}
 body[data-theme="main"] .home-social{border-color:#8e795766;background:#17181b}
-body[data-theme="main"] .home-social.telegram{cursor:pointer;transition:transform .18s,box-shadow .18s}
-body[data-theme="main"] .home-social.telegram:hover,body[data-theme="main"] .home-social.telegram:focus-visible{transform:translateY(-2px);box-shadow:0 0 18px #22a8df88;outline:0}
+body[data-theme="main"] .home-social.tiktok,body[data-theme="main"] .home-social.youtube,body[data-theme="main"] .home-social.telegram{cursor:pointer;transition:transform .18s,box-shadow .18s}
+body[data-theme="main"] .home-social.tiktok:hover,body[data-theme="main"] .home-social.tiktok:focus-visible,body[data-theme="main"] .home-social.youtube:hover,body[data-theme="main"] .home-social.youtube:focus-visible,body[data-theme="main"] .home-social.telegram:hover,body[data-theme="main"] .home-social.telegram:focus-visible{transform:translateY(-2px);box-shadow:0 0 18px #22a8df88;outline:0}
 body[data-theme="main"] .home-news-card time{right:20px;bottom:17px;line-height:1}
 body[data-theme="main"] .home-news-card:last-child div{transform:translateY(-10px)}
+body[data-theme="main"] .home-news-card:last-child{isolation:isolate;background:#101216}
+body[data-theme="main"] .home-news-card:last-child::before{content:'';position:absolute;z-index:-1;inset:-8px;background:linear-gradient(90deg,#101216e8 0%,#101216a3 58%,#101216c7),url('news-02-preview.png') center/cover no-repeat;filter:blur(3px);transform:scale(1.04);opacity:.74}
+body[data-theme="main"] .home-news-card[data-news="01"]{isolation:isolate;background:#101216}
+body[data-theme="main"] .home-news-card[data-news="01"]::before{content:'';position:absolute;z-index:-1;inset:-8px;background:linear-gradient(90deg,#101216e8 0%,#101216a3 58%,#101216c7),url('news-01-preview.png') center/cover no-repeat;filter:blur(3px);transform:scale(1.04);opacity:.74}
+
+/* Detailed news overlay for the two cards on the launcher home menu. */
+.home-news-card{cursor:pointer}
+.home-news-card:focus-visible{outline:2px solid #e6c684;outline-offset:4px}
+.news-modal{position:fixed;z-index:30;inset:0;display:grid;place-items:center;padding:28px;background:#020305c9;backdrop-filter:blur(10px);opacity:0;transition:opacity .18s ease}
+.news-modal.is-open{opacity:1}
+.news-modal-card{position:relative;width:min(760px,100%);max-height:min(780px,calc(100vh - 56px));overflow:auto;padding:clamp(28px,4vw,48px);border:1px solid #8d785355;border-radius:18px;background:linear-gradient(145deg,#17191e,#0d0f13 68%,#08090b);box-shadow:0 26px 80px #000d;color:#eef0f3;transform:translateY(12px) scale(.985);transition:transform .18s ease}
+.news-modal.is-open .news-modal-card{transform:translateY(0) scale(1)}
+.news-modal-close{position:absolute;top:17px;right:18px;width:30px;height:30px;border:1px solid #a88b5d;border-radius:50%;background:transparent;color:#e4c17e;font-size:21px;line-height:1;cursor:pointer}
+.news-modal-close:hover{background:#e4c17e18;transform:rotate(90deg)}
+.news-modal-number{display:block;color:#d5aa61;font:600 10px/1 Unbounded,sans-serif;letter-spacing:1.5px}
+.news-modal-card h2{max-width:600px;margin:14px 34px 10px 0;color:#f6f1e7;font:600 clamp(24px,3.3vw,42px)/1.08 Unbounded,sans-serif;letter-spacing:-1.6px}
+.news-modal-lead{margin:0;color:#d4c8b3;font-size:15px;line-height:1.55}
+.news-modal-gallery{display:grid;grid-template-columns:1.45fr 1fr;gap:12px;margin:27px 0 23px}.news-modal-gallery img{width:100%;height:190px;object-fit:cover;border:1px solid #75675288;border-radius:10px;filter:saturate(.86) contrast(1.06)}.news-modal-gallery img:last-child{height:150px;align-self:end}
+.news-modal-gallery img:only-child{grid-column:1 / -1;height:min(340px,35vh);object-fit:cover}
+.news-modal-body{max-width:650px;color:#c1c5cd;font-size:14px;line-height:1.72}
+.news-modal-body p{margin:0 0 13px}.news-modal-body p:last-child{margin-bottom:0}.news-modal-body strong{font-weight:700}
+.home-feature-card{cursor:pointer}.home-feature-card:focus-visible{outline:2px solid #e6c684;outline-offset:4px}
+.build-modal-image{display:block;width:100%;height:min(290px,30vh);margin:27px 0 23px;object-fit:cover;border:1px solid #75675288;border-radius:10px;filter:saturate(.88) contrast(1.05)}
+.build-modal-go{display:flex;align-items:center;justify-content:center;margin-top:28px;padding:13px 16px;border:1px solid #d4ab65;border-radius:9px;background:linear-gradient(135deg,#d0a25d,#f0d695);color:#17120b;font:600 10px/1 Unbounded,sans-serif;letter-spacing:.45px;cursor:pointer}.build-modal-go:hover{filter:brightness(1.08);transform:translateY(-2px)}
+@media(max-width:650px){.news-modal{padding:15px}.news-modal-card{padding:28px 22px}.news-modal-gallery{grid-template-columns:1fr}.news-modal-gallery img,.news-modal-gallery img:last-child{height:135px}}
 
 /* Shared launcher mark: the interface and packaged Windows shortcut use the same artwork. */
 .side-brand{position:relative;font-size:0!important;background:#07090d!important}

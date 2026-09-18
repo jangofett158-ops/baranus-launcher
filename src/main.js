@@ -555,6 +555,8 @@ ipcMain.handle('open-mods', () => { ensureDirectories(); return shell.openPath(M
 ipcMain.handle('open-shaders', () => { ensureDirectories(); return shell.openPath(SHADERS_DIR); });
 ipcMain.handle('open-resourcepacks', () => { ensureDirectories(); return shell.openPath(RESOURCEPACKS_DIR); });
 ipcMain.handle('open-telegram', () => shell.openExternal('https://t.me/baranus2'));
+ipcMain.handle('open-tiktok', () => shell.openExternal('https://www.tiktok.com/@baranuslauncher'));
+ipcMain.handle('open-youtube', () => shell.openExternal('https://www.youtube.com/@abobus84837'));
 ipcMain.handle('install-java', async () => {
   if (running) throw new Error('Дождись завершения текущей операции.');
   running = true;

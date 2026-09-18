@@ -7,7 +7,7 @@ if (!window.launcher) {
     setNickname: async (value) => value,
     setRam: async () => {}, setLauncherSettings: async (settings) => settings, mainAction: async () => ({ state: 'ready' }),
     checkUpdate: async () => null, applyUpdate: async () => {},
-    openMods: async () => {}, openShaders: async () => {}, openResourcepacks: async () => {}, openTelegram: () => window.open('https://t.me/baranus2', '_blank'),
+    openMods: async () => {}, openShaders: async () => {}, openResourcepacks: async () => {}, openTelegram: () => window.open('https://t.me/baranus2', '_blank'), openTikTok: () => window.open('https://www.tiktok.com/@baranuslauncher', '_blank'), openYouTube: () => window.open('https://www.youtube.com/@abobus84837', '_blank'),
     onStatus: () => {}, onProgress: () => {}, onLog: () => {}, onError: () => {}, onFinished: () => {}
   };
 }
@@ -98,18 +98,18 @@ launcherHome.className = 'main-menu-page';
 launcherHome.hidden = true;
 launcherHome.innerHTML = `
   <div class="home-placeholder-grid" aria-label="Главное меню">
-    <section class="home-placeholder home-placeholder-large home-feature-card">
+    <section class="home-placeholder home-placeholder-large home-feature-card" role="button" tabindex="0" data-main-build title="Открыть описание сборки">
       <span class="home-card-tag">ОСНОВНАЯ СБОРКА</span>
       <div><h1>Космическая<br>сборка</h1><span>Minecraft 1.12.2 · Forge</span></div>
     </section>
     <div class="home-news-column">
       <span class="home-news-heading">NEWS</span>
-      <section class="home-placeholder home-news-card">
+      <section class="home-placeholder home-news-card" role="button" tabindex="0" data-news="01" title="Открыть новость">
         <span class="home-card-tag">ОБНОВЛЕНИЯ</span>
-        <div><p>Новости лаунчера</p><small>Здесь будут появляться важные обновления.</small></div>
+        <div><p>Обновление лаунчера 0.2.7</p><small>В лаунчере появился новостник.</small></div>
         <time>01</time>
       </section>
-      <section class="home-placeholder home-news-card">
+      <section class="home-placeholder home-news-card" role="button" tabindex="0" data-news="02" title="Открыть новость">
         <span class="home-card-tag">В РАЗРАБОТКЕ</span>
         <div><p>Новые сборки</p><small>Следите за новостями Baranus Launcher.</small></div>
         <time>02</time>
@@ -118,11 +118,10 @@ launcherHome.innerHTML = `
   </div>
   <div class="home-support-row">
     <span class="home-support-label">ПОДДЕРЖКА</span>
-    <div class="home-socials" aria-label="Социальные сети — заглушки">
-      <span class="home-social tiktok" role="img" aria-label="TikTok — заглушка"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M18 6v15a5 5 0 1 1-4-5v4a2 2 0 1 0 1 2V6h3c1 4 3 5 6 5v4c-3 0-5-1-6-3" fill="white"/></svg></span>
-      <span class="home-social threads" role="img" aria-label="Threads — заглушка"><svg viewBox="0 0 32 32" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M24 10C21 3 8 4 7 14c-2 13 13 16 18 8 4-7-7-12-12-8-4 3 1 8 5 5 3-2 3-12-5-9M19 26c-6 2-12-2-12-9"/></svg></span>
-      <span class="home-social youtube" role="img" aria-label="YouTube — заглушка"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="m12 8 13 8-13 8Z" fill="white"/></svg></span>
-      <span class="home-social telegram" role="img" aria-label="Telegram — заглушка"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 15 26 7l-4 19-7-6-4 4 1-7 10-7-12 6Z" fill="white"/></svg></span>
+    <div class="home-socials" aria-label="Социальные сети">
+      <span class="home-social tiktok" role="img" aria-label="Открыть TikTok Baranus Launcher"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M18 6v15a5 5 0 1 1-4-5v4a2 2 0 1 0 1 2V6h3c1 4 3 5 6 5v4c-3 0-5-1-6-3" fill="white"/></svg></span>
+      <span class="home-social youtube" role="img" aria-label="Открыть YouTube"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="m12 8 13 8-13 8Z" fill="white"/></svg></span>
+      <span class="home-social telegram" role="img" aria-label="Открыть Telegram Baranus"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 15 26 7l-4 19-7-6-4 4 1-7 10-7-12 6Z" fill="white"/></svg></span>
     </div>
   </div>`;
 const homeNewsLabel = document.createElement('span');
@@ -130,12 +129,75 @@ homeNewsLabel.className = 'home-news-label';
 homeNewsLabel.textContent = 'NEWS';
 document.querySelector('.workspace > header').append(homeNewsLabel);
 futurePage.before(launcherHome);
-const telegramLink = launcherHome.querySelector('.home-social.telegram');
-telegramLink.setAttribute('role', 'link');
-telegramLink.setAttribute('tabindex', '0');
-telegramLink.setAttribute('title', 'Открыть Telegram-канал Baranus');
-telegramLink.onclick = () => window.launcher.openTelegram();
-telegramLink.onkeydown = (event) => { if (event.key === 'Enter' || event.key === ' ') window.launcher.openTelegram(); };
+const newsModal = document.createElement('div');
+newsModal.id = 'newsModal';
+newsModal.className = 'news-modal';
+newsModal.hidden = true;
+newsModal.innerHTML = `<article class="news-modal-card" role="dialog" aria-modal="true" aria-labelledby="newsModalTitle"><button class="news-modal-close" type="button" aria-label="Закрыть новость">×</button><span class="news-modal-number"></span><h2 id="newsModalTitle"></h2><p class="news-modal-lead"></p><div class="news-modal-gallery"></div><div class="news-modal-body"></div></article>`;
+document.body.append(newsModal);
+const buildModal = document.createElement('div');
+buildModal.id = 'buildModal';
+buildModal.className = 'news-modal';
+buildModal.hidden = true;
+buildModal.innerHTML = `<article class="news-modal-card build-modal-card" role="dialog" aria-modal="true" aria-labelledby="buildModalTitle"><button class="news-modal-close" type="button" aria-label="Закрыть описание сборки">×</button><span class="news-modal-number">ОСНОВНАЯ СБОРКА</span><h2 id="buildModalTitle">Космическая сборка</h2><p class="news-modal-lead">Minecraft 1.12.2 · Forge</p><img class="build-modal-image" src="home-cosmic-preview.png" alt="Космическая сборка Baranus"><div class="news-modal-body"><p>Отправляйся в космическое приключение с <strong>Galacticraft</strong>!</p><p>Развивай технологии, автоматизируй добычу и производство, создавай мощные источники энергии и строй ракеты. Исследуй другие планеты, создавай космические станции и обустраивай базы за пределами Земли.</p><p>Играй вместе с друзьями и устрой настоящую <strong>космическую гонку</strong> — соревнуйтесь в развитии технологий, запуске первых ракет и покорении новых планет!</p></div><button class="build-modal-go" type="button">ПЕРЕЙТИ К СБОРКЕ</button></article>`;
+document.body.append(buildModal);
+const newsItems = {
+  '01': {
+    title: 'Обновление лаунчера 0.2.7',
+    lead: 'В лаунчере появился новостник.',
+    body: 'Главное меню стало удобнее: теперь новости открываются в отдельных окнах с подробным описанием и изображениями. Также исправлено открытие главного меню при запуске, обновлены фоновые композиции и доработана кнопка обновления лаунчера. Следующие важные изменения будут публиковаться здесь.',
+    images: ['news-01-update.png']
+  },
+  '02': {
+    title: 'Новые сборки',
+    lead: 'В лаунчере появляются отдельные тематические страницы.',
+    body: 'Сейчас доступны страницы космической сборки, SCP и Vanilla Minecraft. Каждая страница получает собственный стиль и фоновую музыку. Подробности о будущих серверах и обновлениях будут публиковаться здесь.',
+    images: ['news-02-scp.png', 'news-02-vanilla.png']
+  }
+};
+function openNews(id) {
+  const item = newsItems[id];
+  if (!item) return;
+  newsModal.querySelector('.news-modal-number').textContent = id;
+  newsModal.querySelector('#newsModalTitle').textContent = item.title;
+  newsModal.querySelector('.news-modal-lead').textContent = item.lead;
+  newsModal.querySelector('.news-modal-body').textContent = item.body;
+  const gallery = newsModal.querySelector('.news-modal-gallery');
+  gallery.innerHTML = '';
+  item.images.forEach((source) => { const image = document.createElement('img'); image.src = source; image.alt = ''; gallery.append(image); });
+  newsModal.hidden = false;
+  requestAnimationFrame(() => newsModal.classList.add('is-open'));
+  newsModal.querySelector('.news-modal-close').focus();
+}
+function closeNews() { newsModal.classList.remove('is-open'); window.setTimeout(() => { if (!newsModal.classList.contains('is-open')) newsModal.hidden = true; }, 180); }
+launcherHome.querySelectorAll('[data-news]').forEach((card) => {
+  card.onclick = () => openNews(card.dataset.news);
+  card.onkeydown = (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openNews(card.dataset.news); } };
+});
+newsModal.querySelector('.news-modal-close').onclick = closeNews;
+newsModal.onclick = (event) => { if (event.target === newsModal) closeNews(); };
+function closeBuildModal() { buildModal.classList.remove('is-open'); window.setTimeout(() => { if (!buildModal.classList.contains('is-open')) buildModal.hidden = true; }, 180); }
+function openBuildModal() { buildModal.hidden = false; requestAnimationFrame(() => buildModal.classList.add('is-open')); buildModal.querySelector('.news-modal-close').focus(); }
+const mainBuildCard = launcherHome.querySelector('[data-main-build]');
+mainBuildCard.onclick = openBuildModal;
+mainBuildCard.onkeydown = (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openBuildModal(); } };
+buildModal.querySelector('.news-modal-close').onclick = closeBuildModal;
+buildModal.onclick = (event) => { if (event.target === buildModal) closeBuildModal(); };
+buildModal.querySelector('.build-modal-go').onclick = () => { closeBuildModal(); document.querySelector('.page-dot[data-page="1122"]').click(); };
+document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { if (!newsModal.hidden) closeNews(); if (!buildModal.hidden) closeBuildModal(); } });
+const socialLinks = [
+  ['.home-social.tiktok', 'Открыть TikTok Baranus Launcher', () => window.launcher.openTikTok()],
+  ['.home-social.youtube', 'Открыть YouTube', () => window.launcher.openYouTube()],
+  ['.home-social.telegram', 'Открыть Telegram-канал Baranus', () => window.launcher.openTelegram()]
+];
+socialLinks.forEach(([selector, title, open]) => {
+  const link = launcherHome.querySelector(selector);
+  link.setAttribute('role', 'link');
+  link.setAttribute('tabindex', '0');
+  link.setAttribute('title', title);
+  link.onclick = open;
+  link.onkeydown = (event) => { if (event.key === 'Enter' || event.key === ' ') open(); };
+});
 const homeNav = document.querySelector('.side-brand');
 homeNav.setAttribute('role', 'button');
 homeNav.setAttribute('tabindex', '0');
