@@ -1,6 +1,6 @@
 {
   "name": "forge-1122-launcher",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Minimal launcher for Minecraft Forge 1.12.2",
   "main": "src/main.js",
   "scripts": {
@@ -65,11 +65,13 @@
       "!baranus-v029/**",
       "!baranus-v030/**",
       "!baranus-v031/**",
+      "!baranus-v032/**",
+      "!src/renderer/scp-document.png",
       "!dist/**",
       "!build*.log"
     ],
     "directories": {
-      "output": "baranus-v031"
+      "output": "baranus-v032"
     },
     "win": {
       "target": [

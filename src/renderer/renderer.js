@@ -7,7 +7,7 @@ if (!window.launcher) {
     setNickname: async (value) => value,
     setRam: async () => {}, setLauncherSettings: async (settings) => settings, mainAction: async () => ({ state: 'ready' }),
     checkUpdate: async () => null, applyUpdate: async () => {},
-    openMods: async () => {}, openShaders: async () => {}, openResourcepacks: async () => {}, openTelegram: () => window.open('https://t.me/baranus2', '_blank'), openTikTok: () => window.open('https://www.tiktok.com/@baranuslauncher', '_blank'), openYouTube: () => window.open('https://www.youtube.com/@abobus84837', '_blank'),
+    openMods: async () => {}, openShaders: async () => {}, openResourcepacks: async () => {}, openTelegram: () => window.open('https://t.me/baranus2', '_blank'), openSupport: () => window.open('https://t.me/poderzkabaranus_bot', '_blank'), openTikTok: () => window.open('https://www.tiktok.com/@baranuslauncher', '_blank'), openYouTube: () => window.open('https://www.youtube.com/@abobus84837', '_blank'),
     onStatus: () => {}, onProgress: () => {}, onLog: () => {}, onError: () => {}, onFinished: () => {}
   };
 }
@@ -48,7 +48,7 @@ async function saveLauncherSettings() { const saved = await window.launcher.setL
 function openSettings() { settingsPanel.hidden = false; requestAnimationFrame(() => settingsPanel.classList.add('is-open')); }
 function hideSettings() { settingsPanel.classList.remove('is-open'); window.setTimeout(() => { if (!settingsPanel.classList.contains('is-open')) settingsPanel.hidden = true; }, 180); }
 async function saveNickname(value) { const name = await window.launcher.setNickname(value); nickname.value = name; showGreeting(name); return name; }
-window.launcher.info().then((info) => { ram.max = info.maxRamGb; ram.value = info.ramGb; ramValue.textContent = `${info.ramGb} ГБ`; ramHint.textContent = `Максимум: ${info.maxRamGb} ГБ`; version.textContent = `v${info.version}`; nickname.value = info.nickname; showGreeting(info.nickname); renderAction(info.contentState); renderLauncherSettings(info.launcherSettings); status.textContent = info.contentState === 'play' ? 'Сборка готова к запуску.' : info.contentState === 'sync' ? 'Доступно обновление файлов сборки.' : 'Нажми «Установить», чтобы подготовить сборку.'; showLauncherHome(); if (!info.nickname) { nameModal.hidden = false; nameModal.style.display = 'grid'; firstNickname.focus(); } window.launcher.checkUpdate().then((release) => { if (release) { update.hidden = false; update.textContent = `ОБНОВИТЬ ДО ${release.version}`; } }); });
+window.launcher.info().then((info) => { ram.max = info.maxRamGb; ram.value = info.ramGb; ramValue.textContent = `${info.ramGb} ГБ`; ramHint.textContent = `Максимум: ${info.maxRamGb} ГБ`; version.textContent = `v${info.version}`; nickname.value = info.nickname; showGreeting(info.nickname); renderAction(info.contentState); renderLauncherSettings(info.launcherSettings); status.textContent = info.contentState === 'play' ? 'Сборка готова к запуску.' : info.contentState === 'sync' ? 'Доступно обновление файлов сборки.' : 'Нажми «Установить», чтобы подготовить сборку.'; showLauncherHome(); if (!info.nickname) { nameModal.hidden = false; nameModal.style.display = 'grid'; firstNickname.focus(); } else { startOnboardingIfNeeded(); } window.launcher.checkUpdate().then((release) => { if (release) { update.hidden = false; update.textContent = `ОБНОВИТЬ ДО ${release.version}`; } }); });
 window.launcher.onStatus((message) => status.textContent = message);
 window.launcher.onProgress(({ value, indeterminate }) => { fill.style.width = `${Math.max(0, Math.min(100, value || 0))}%`; fill.classList.toggle('indeterminate', Boolean(indeterminate)); progressText.textContent = indeterminate ? 'ПРОВЕРКА…' : `${Math.round(value || 0)}%`; });
 window.launcher.onLog((message) => { log.textContent += `${message}\n`; log.scrollTop = log.scrollHeight; });
@@ -60,7 +60,7 @@ $('resources').onclick = () => window.launcher.openResourcepacks();
 $('settings').onclick = () => settingsPanel.hidden ? openSettings() : hideSettings();
 $('closeSettings').onclick = hideSettings;
 [windowResolution, fullscreen, launchBehavior].forEach((control) => { control.onchange = () => saveLauncherSettings().catch((error) => { status.textContent = `Ошибка настроек: ${error.message || error}`; }); });
-$('firstNicknameSave').onclick = async () => { try { await saveNickname(firstNickname.value); nameModal.hidden = true; nameModal.style.display = 'none'; } catch (error) { status.textContent = `Ошибка: ${error.message}`; } };
+$('firstNicknameSave').onclick = async () => { try { await saveNickname(firstNickname.value); nameModal.hidden = true; nameModal.style.display = 'none'; startOnboardingIfNeeded(); } catch (error) { status.textContent = `Ошибка: ${error.message}`; } };
 firstNickname.onkeydown = (event) => { if (event.key === 'Enter') $('firstNicknameSave').click(); };
 nickname.onchange = () => saveNickname(nickname.value).catch((error) => { status.textContent = `Ошибка: ${error.message}`; });
 ram.oninput = () => { ramValue.textContent = `${ram.value} ГБ`; }; ram.onchange = () => window.launcher.setRam(Number(ram.value));
@@ -117,7 +117,7 @@ launcherHome.innerHTML = `
     </div>
   </div>
   <div class="home-support-row">
-    <span class="home-support-label">ПОДДЕРЖКА</span>
+    <button class="home-support-label" type="button" title="Открыть Telegram-бот поддержки">ПОДДЕРЖКА</button>
     <div class="home-socials" aria-label="Социальные сети">
       <span class="home-social tiktok" role="img" aria-label="Открыть TikTok Baranus Launcher"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M18 6v15a5 5 0 1 1-4-5v4a2 2 0 1 0 1 2V6h3c1 4 3 5 6 5v4c-3 0-5-1-6-3" fill="white"/></svg></span>
       <span class="home-social youtube" role="img" aria-label="Открыть YouTube"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="m12 8 13 8-13 8Z" fill="white"/></svg></span>
@@ -190,6 +190,7 @@ const socialLinks = [
   ['.home-social.youtube', 'Открыть YouTube', () => window.launcher.openYouTube()],
   ['.home-social.telegram', 'Открыть Telegram-канал Baranus', () => window.launcher.openTelegram()]
 ];
+launcherHome.querySelector('.home-support-label').onclick = () => window.launcher.openSupport();
 socialLinks.forEach(([selector, title, open]) => {
   const link = launcherHome.querySelector(selector);
   link.setAttribute('role', 'link');
@@ -215,3 +216,65 @@ homeNav.onkeydown = (event) => { if (event.key === 'Enter' || event.key === ' ')
 // Render the launcher menu synchronously. This prevents the previous build
 // page from appearing briefly while the main process is loading game state.
 showLauncherHome();
+
+// First-launch guide. It is deliberately local to the launcher profile and never
+// sends usage data anywhere.
+const onboardingKey = 'baranus-onboarding-v1-complete';
+const onboarding = document.createElement('section');
+onboarding.id = 'onboarding';
+onboarding.className = 'onboarding';
+onboarding.hidden = true;
+onboarding.innerHTML = `<div class="onboarding-spotlight" aria-hidden="true"></div><article class="onboarding-card" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle"><span class="onboarding-count"></span><h2 id="onboardingTitle"></h2><p></p><div class="onboarding-actions"><button class="onboarding-skip" type="button">ПРОПУСТИТЬ</button><span></span><button class="onboarding-back" type="button">НАЗАД</button><button class="onboarding-next" type="button">ДАЛЕЕ</button></div></article>`;
+document.body.append(onboarding);
+const onboardingSteps = [
+  { selector: '.side-brand', title: 'ГЛАВНОЕ МЕНЮ', text: 'Нажми на букву B, чтобы в любой момент вернуться в главное меню.' },
+  { selector: '.page-switches', title: 'СТРАНИЦЫ СБОРОК', text: 'Кружки открывают сборки лаунчера.' },
+  { selector: '[data-main-build]', title: 'ОСНОВНАЯ СБОРКА', text: 'Нажми на большую карточку, чтобы прочитать описание космической сборки и перейти к ней.' },
+  { selector: '.home-news-column', title: 'НОВОСТИ', text: 'Карточки 01 и 02 открываются — там публикуются подробности обновлений и новых сборок.' },
+  { selector: '.home-support-label', title: 'ПОДДЕРЖКА', text: 'Нажми сюда, чтобы открыть Telegram-бот поддержки проекта.' },
+  { selector: '.home-socials', title: 'СОЦИАЛЬНЫЕ СЕТИ', text: 'Здесь находятся ссылки на TikTok, YouTube и Telegram-канал проекта.' },
+  { selector: '#settings', title: 'НАСТРОЙКИ', text: 'Здесь можно выбрать разрешение окна, полноэкранный режим и поведение лаунчера после запуска Minecraft.' }
+];
+let onboardingStep = 0;
+let onboardingStarted = false;
+function finishOnboarding() {
+  onboardingStarted = false;
+  onboarding.hidden = true;
+  localStorage.setItem(onboardingKey, 'true');
+}
+function renderOnboarding() {
+  const step = onboardingSteps[onboardingStep];
+  const target = document.querySelector(step.selector);
+  if (!target) return finishOnboarding();
+  const rect = target.getBoundingClientRect();
+  const spot = onboarding.querySelector('.onboarding-spotlight');
+  const card = onboarding.querySelector('.onboarding-card');
+  const inset = 8;
+  spot.style.left = `${Math.max(6, rect.left - inset)}px`;
+  spot.style.top = `${Math.max(6, rect.top - inset)}px`;
+  spot.style.width = `${rect.width + inset * 2}px`;
+  spot.style.height = `${rect.height + inset * 2}px`;
+  card.querySelector('.onboarding-count').textContent = `${onboardingStep + 1} / ${onboardingSteps.length}`;
+  card.querySelector('h2').textContent = step.title;
+  card.querySelector('p').textContent = step.text;
+  card.querySelector('.onboarding-back').hidden = onboardingStep === 0;
+  card.querySelector('.onboarding-next').textContent = onboardingStep === onboardingSteps.length - 1 ? 'ГОТОВО' : 'ДАЛЕЕ';
+  const cardWidth = Math.min(340, window.innerWidth - 32);
+  const left = rect.left < window.innerWidth * .48 ? Math.min(window.innerWidth - cardWidth - 16, Math.max(16, rect.right + 22)) : Math.max(16, rect.left - cardWidth - 22);
+  const top = Math.max(16, Math.min(window.innerHeight - 210, rect.top + rect.height / 2 - 90));
+  card.style.left = `${left}px`;
+  card.style.top = `${top}px`;
+}
+function startOnboardingIfNeeded() {
+  if (onboardingStarted || localStorage.getItem(onboardingKey)) return;
+  onboardingStarted = true;
+  onboardingStep = 0;
+  showLauncherHome();
+  onboarding.hidden = false;
+  requestAnimationFrame(renderOnboarding);
+}
+onboarding.querySelector('.onboarding-next').onclick = () => { if (onboardingStep === onboardingSteps.length - 1) return finishOnboarding(); onboardingStep += 1; renderOnboarding(); };
+onboarding.querySelector('.onboarding-back').onclick = () => { onboardingStep = Math.max(0, onboardingStep - 1); renderOnboarding(); };
+onboarding.querySelector('.onboarding-skip').onclick = finishOnboarding;
+window.addEventListener('resize', () => { if (onboardingStarted) renderOnboarding(); });
+document.addEventListener('keydown', (event) => { if (onboardingStarted && event.key === 'Escape') finishOnboarding(); });

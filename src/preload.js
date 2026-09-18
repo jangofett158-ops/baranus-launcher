@@ -16,6 +16,7 @@ contextBridge.exposeInMainWorld('launcher', {
   openShaders: () => ipcRenderer.invoke('open-shaders'),
   openResourcepacks: () => ipcRenderer.invoke('open-resourcepacks'),
   openTelegram: () => ipcRenderer.invoke('open-telegram'),
+  openSupport: () => ipcRenderer.invoke('open-support'),
   openTikTok: () => ipcRenderer.invoke('open-tiktok'),
   openYouTube: () => ipcRenderer.invoke('open-youtube'),
   chooseJava: () => ipcRenderer.invoke('choose-java'),

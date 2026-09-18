@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Minecraft tropical dawn">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#1c8078"/><stop offset="1" stop-color="#063b40"/></linearGradient>
+    <linearGradient id="grass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d7ef6d"/><stop offset="1" stop-color="#72ba55"/></linearGradient>
+    <linearGradient id="soil" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#956548"/><stop offset="1" stop-color="#553528"/></linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="48" fill="url(#sky)"/>
+  <g transform="translate(0 -8)">
+    <path d="M20 45 50 28l30 17-30 18z" fill="url(#grass)"/>
+    <path d="M20 45 50 63v35L20 80z" fill="url(#soil)"/>
+    <path d="M80 45 50 63v35l30-18z" fill="#68422f"/>
+    <path d="M20 45 50 63l30-18" fill="none" stroke="#ecff9c" stroke-opacity=".7" stroke-width="2"/>
+  </g>
+</svg>
