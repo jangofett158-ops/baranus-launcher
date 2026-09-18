@@ -51,6 +51,7 @@ const DEFAULT_CONTENT_MANIFEST = {
 
 let window;
 let running = false;
+let gameRunning = false;
 let availableUpdate = null;
 let updaterConfigured = false;
 
@@ -423,7 +424,11 @@ async function installDependencies() {
 
 async function runMainAction(nickname, ramGb) {
   const state = await getContentState();
-  if (state === 'play') return prepareMinecraft(nickname, true, saveRamGb(ramGb));
+  if (state === 'play') {
+    if (gameRunning) throw new Error('Minecraft уже запущен.');
+    await prepareMinecraft(nickname, true, saveRamGb(ramGb));
+    return { state: 'launched' };
+  }
   if (state === 'install') {
     emit('status', 'Подготавливаем Baranus Launcher: Java, Minecraft и сборка…');
     await getBundledJava();
@@ -464,8 +469,9 @@ async function prepareMinecraft(nickname, startAfterInstall = true, ramGb = getR
   const launcher = new Client();
   launcher.on('debug', (message) => emit('log', String(message)));
   launcher.on('data', (message) => emit('log', String(message)));
+  let finishGame;
   if (startAfterInstall) {
-    launcher.on('close', (code) => { running = false; emit('finished', code); });
+    launcher.on('close', (code) => finishGame?.(code));
   } else {
     // MCLC uses its normal dependency downloader, but we replace only the final
     // Java process spawn so the Install button never starts Minecraft.
@@ -480,7 +486,21 @@ async function prepareMinecraft(nickname, startAfterInstall = true, ramGb = getR
   emit('progress', { value: 100, indeterminate: false });
   if (!startAfterInstall) fs.writeFileSync(MINECRAFT_INSTALL_MARKER, 'Minecraft and Forge were installed by Baranus Launcher.');
   emit('status', startAfterInstall ? 'Minecraft запущен.' : 'Minecraft установлен.');
-  if (startAfterInstall) applyLaunchBehavior();
+  if (startAfterInstall) {
+    // minecraft-launcher-core may not always forward its own `close` event.
+    // Listen to the real child process as well, so the launcher never remains
+    // locked after a game has exited.
+    gameRunning = true;
+    finishGame = (code) => {
+      if (!gameRunning) return;
+      gameRunning = false;
+      running = false;
+      emit('finished', code ?? 0);
+    };
+    gameProcess.once?.('close', finishGame);
+    gameProcess.once?.('error', () => finishGame(1));
+    applyLaunchBehavior();
+  }
 }
 
 async function getBundledJava() {
@@ -558,7 +578,7 @@ ipcMain.handle('install-minecraft', async (_event, { nickname, ramGb }) => {
   finally { running = false; }
 });
 ipcMain.handle('main-action', async (_event, { nickname, ramGb }) => {
-  if (running) throw new Error('Дождись завершения текущей операции.');
+  if (running || gameRunning) throw new Error(gameRunning ? 'Minecraft уже запущен.' : 'Дождись завершения текущей операции.');
   if (!/^[A-Za-z0-9_]{3,16}$/.test(nickname || '')) throw new Error('Ник: 3–16 латинских букв, цифр или _.');
   running = true;
   try { return await runMainAction(nickname, ramGb); }

@@ -65,7 +65,7 @@ firstNickname.onkeydown = (event) => { if (event.key === 'Enter') $('firstNickna
 nickname.onchange = () => saveNickname(nickname.value).catch((error) => { status.textContent = `Ошибка: ${error.message}`; });
 ram.oninput = () => { ramValue.textContent = `${ram.value} ГБ`; }; ram.onchange = () => window.launcher.setRam(Number(ram.value));
 update.onclick = async () => { update.disabled = true; try { await window.launcher.applyUpdate(); } catch (error) { status.textContent = `Ошибка обновления: ${error.message}`; update.disabled = false; } };
-action.onclick = async () => { const launchedGame = contentState === 'play'; action.disabled = true; try { await saveNickname(nickname.value); const result = await window.launcher.mainAction({ nickname: nickname.value.trim(), ramGb: Number(ram.value) }); if (result?.state === 'ready') { renderAction('play'); status.textContent = result.warning ? 'Не все файлы обновились, но игру можно запустить.' : 'Сборка готова к запуску.'; } } catch (error) { status.textContent = `Ошибка: ${error.message || error}`; progressText.textContent = 'ОШИБКА'; } finally { if (!launchedGame) action.disabled = false; } };
+action.onclick = async () => { action.disabled = true; try { await saveNickname(nickname.value); const result = await window.launcher.mainAction({ nickname: nickname.value.trim(), ramGb: Number(ram.value) }); if (result?.state === 'ready') { renderAction('play'); status.textContent = result.warning ? 'Не все файлы обновились, но игру можно запустить.' : 'Сборка готова к запуску.'; } if (result?.state === 'launched') status.textContent = 'Minecraft запущен.'; } catch (error) { status.textContent = `Ошибка: ${error.message || error}`; progressText.textContent = 'ОШИБКА'; } finally { action.disabled = false; } };
 
 const homePage = $('homePage');
 const futurePage = $('futurePage');
@@ -150,3 +150,6 @@ function showLauncherHome() {
 }
 homeNav.onclick = showLauncherHome;
 homeNav.onkeydown = (event) => { if (event.key === 'Enter' || event.key === ' ') showLauncherHome(); };
+// Render the launcher menu synchronously. This prevents the previous build
+// page from appearing briefly while the main process is loading game state.
+showLauncherHome();
