@@ -43,14 +43,15 @@ function syncPageMusic(page) {
 }
 nameModal.style.display = 'none';
 function showGreeting(name) { greeting.textContent = name ? `Добро пожаловать, ${name}!` : 'Добро пожаловать!'; }
+function renderProfileNickname(name) { const target = $('profileNickname'); if (target) target.textContent = name || 'Player'; }
 function renderAction(state) { contentState = state; const text = state === 'play' ? ['Играть', 'Запустить Minecraft'] : state === 'sync' ? ['Обновить', 'Проверить и обновить файлы сборки'] : ['Установить', '']; actionTitle.textContent = text[0]; actionHint.textContent = text[1]; action.classList.toggle('is-play', state === 'play'); action.classList.toggle('is-sync', state === 'sync'); }
 function renderLauncherSettings(value = {}) { windowResolution.value = value.resolution || '960x700'; fullscreen.checked = Boolean(value.fullscreen); launchBehavior.value = value.launchBehavior || 'keep'; }
 async function saveLauncherSettings() { const saved = await window.launcher.setLauncherSettings({ resolution: windowResolution.value, fullscreen: fullscreen.checked, launchBehavior: launchBehavior.value }); renderLauncherSettings(saved); }
 function openSettings() { settingsPanel.hidden = false; requestAnimationFrame(() => settingsPanel.classList.add('is-open')); }
 function hideSettings() { settingsPanel.classList.remove('is-open'); window.setTimeout(() => { if (!settingsPanel.classList.contains('is-open')) settingsPanel.hidden = true; }, 180); }
 function renderLauncherUpdateProgress(value = 0, indeterminate = false) { launcherUpdateProgress.hidden = false; launcherUpdateFill.style.width = `${Math.max(0, Math.min(100, value || 0))}%`; launcherUpdateFill.classList.toggle('indeterminate', Boolean(indeterminate)); launcherUpdateText.textContent = indeterminate ? '…' : `${Math.round(value || 0)}%`; }
-async function saveNickname(value) { const name = await window.launcher.setNickname(value); nickname.value = name; showGreeting(name); return name; }
-window.launcher.info().then((info) => { ram.max = info.maxRamGb; ram.value = info.ramGb; ramValue.textContent = `${info.ramGb} ГБ`; ramHint.textContent = `Максимум: ${info.maxRamGb} ГБ`; version.textContent = `v${info.version}`; nickname.value = info.nickname; showGreeting(info.nickname); renderAction(info.contentState); renderLauncherSettings(info.launcherSettings); status.textContent = info.contentState === 'play' ? 'Сборка готова к запуску.' : info.contentState === 'sync' ? 'Доступно обновление файлов сборки.' : 'Нажми «Установить», чтобы подготовить сборку.'; showLauncherHome(); if (!info.nickname) { nameModal.hidden = false; nameModal.style.display = 'grid'; firstNickname.focus(); } else { startOnboardingIfNeeded(); } window.launcher.checkUpdate().then((release) => { if (release) { update.hidden = false; update.textContent = `ОБНОВИТЬ ДО ${release.version}`; } }); });
+async function saveNickname(value) { const name = await window.launcher.setNickname(value); nickname.value = name; showGreeting(name); renderProfileNickname(name); return name; }
+window.launcher.info().then((info) => { ram.max = info.maxRamGb; ram.value = info.ramGb; ramValue.textContent = `${info.ramGb} ГБ`; ramHint.textContent = `Максимум: ${info.maxRamGb} ГБ`; version.textContent = `v${info.version}`; nickname.value = info.nickname; showGreeting(info.nickname); renderProfileNickname(info.nickname); renderAction(info.contentState); renderLauncherSettings(info.launcherSettings); status.textContent = info.contentState === 'play' ? 'Сборка готова к запуску.' : info.contentState === 'sync' ? 'Доступно обновление файлов сборки.' : 'Нажми «Установить», чтобы подготовить сборку.'; showLauncherHome(); if (!info.nickname) { nameModal.hidden = false; nameModal.style.display = 'grid'; firstNickname.focus(); } else { startOnboardingIfNeeded(); } window.launcher.checkUpdate().then((release) => { if (release) { update.hidden = false; update.textContent = `ОБНОВИТЬ ДО ${release.version}`; } }); });
 window.launcher.onStatus((message) => status.textContent = message);
 window.launcher.onProgress(({ scope, value, indeterminate }) => { if (scope === 'launcher-update') { renderLauncherUpdateProgress(value, indeterminate); return; } fill.style.width = `${Math.max(0, Math.min(100, value || 0))}%`; fill.classList.toggle('indeterminate', Boolean(indeterminate)); progressText.textContent = indeterminate ? 'ПРОВЕРКА…' : `${Math.round(value || 0)}%`; });
 window.launcher.onLog((message) => { log.textContent += `${message}\n`; log.scrollTop = log.scrollHeight; });
@@ -71,6 +72,13 @@ action.onclick = async () => { action.disabled = true; try { await saveNickname(
 
 const homePage = $('homePage');
 const futurePage = $('futurePage');
+const profilePage = $('profilePage');
+const workspace = document.querySelector('.workspace');
+function animatePageChrome() {
+  workspace.classList.remove('page-transition');
+  void workspace.offsetWidth;
+  workspace.classList.add('page-transition');
+}
 function renderFuturePage(page) {
   if (page === '1165a') {
     futurePage.className = 'future-page scp-page';
@@ -85,11 +93,13 @@ document.querySelectorAll('.page-dot').forEach((dot) => {
     const isHome = dot.dataset.page === '1122';
     document.querySelectorAll('.page-dot').forEach((item) => item.classList.toggle('active', item === dot));
     launcherHome.hidden = true;
+    profilePage.hidden = true;
     document.body.dataset.theme = isHome ? 'space' : dot.dataset.page;
     homePage.hidden = !isHome;
     futurePage.hidden = isHome;
     if (!isHome) renderFuturePage(dot.dataset.page);
     syncPageMusic(dot.dataset.page);
+    animatePageChrome();
   };
 });
 
@@ -210,9 +220,22 @@ function showLauncherHome() {
   document.body.dataset.theme = 'main';
   homePage.hidden = true;
   futurePage.hidden = true;
+  profilePage.hidden = true;
   launcherHome.hidden = false;
   syncPageMusic('main');
+  animatePageChrome();
 }
+function showProfilePage() {
+  document.querySelectorAll('.page-dot').forEach((item) => item.classList.remove('active'));
+  document.body.dataset.theme = 'profile';
+  homePage.hidden = true;
+  futurePage.hidden = true;
+  launcherHome.hidden = true;
+  profilePage.hidden = false;
+  syncPageMusic('main');
+  animatePageChrome();
+}
+$('profile').onclick = showProfilePage;
 homeNav.onclick = showLauncherHome;
 homeNav.onkeydown = (event) => { if (event.key === 'Enter' || event.key === ' ') showLauncherHome(); };
 // Render the launcher menu synchronously. This prevents the previous build
@@ -235,6 +258,7 @@ const onboardingSteps = [
   { selector: '.home-news-column', title: 'НОВОСТИ', text: 'Карточки 01 и 02 открываются — там публикуются подробности обновлений и новых сборок.' },
   { selector: '.home-support-label', title: 'ПОДДЕРЖКА', text: 'Нажми сюда, чтобы открыть Telegram-бот поддержки проекта.' },
   { selector: '.home-socials', title: 'СОЦИАЛЬНЫЕ СЕТИ', text: 'Здесь находятся ссылки на TikTok, YouTube и Telegram-канал проекта.' },
+  { selector: '#profile', title: 'ЛИЧНЫЙ КАБИНЕТ', text: 'Эта кнопка открывает личный кабинет. Здесь появятся аккаунт Baranus, список сборок и привязка к серверу.' },
   { selector: '#settings', title: 'НАСТРОЙКИ', text: 'Здесь можно выбрать разрешение окна, полноэкранный режим и поведение лаунчера после запуска Minecraft.' }
 ];
 let onboardingStep = 0;
