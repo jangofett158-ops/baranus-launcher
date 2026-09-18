@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('launcher', {
   mainAction: (settings) => ipcRenderer.invoke('main-action', settings),
   setRam: (ramGb) => ipcRenderer.invoke('set-ram', ramGb),
   setNickname: (nickname) => ipcRenderer.invoke('set-nickname', nickname),
+  setLauncherSettings: (settings) => ipcRenderer.invoke('set-launcher-settings', settings),
   checkUpdate: () => ipcRenderer.invoke('check-update'),
   applyUpdate: () => ipcRenderer.invoke('apply-update'),
   openMods: () => ipcRenderer.invoke('open-mods'),

@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "contentVersion": "0.2.5-content.1",
+  "assets": [
+    {
+      "name": "OptiFine HD U G5",
+      "path": "mods/OptiFine_1.12.2_HD_U_G5.jar",
+      "source": "optifine"
+    },
+    {
+      "name": "Galacticraft Legacy 4.0.7",
+      "path": "mods/Galacticraft-1.12.2-4.0.7.jar",
+      "url": "https://www.cursemaven.com/curse/maven/galacticraft-legacy-564236/6364107/galacticraft-legacy-564236-6364107.jar"
+    },
+    {
+      "name": "Iron Chests 7.0.72.847",
+      "path": "mods/ironchest-1.12.2-7.0.72.847.jar",
+      "url": "https://www.cursemaven.com/curse/maven/iron-chests-228756/2747935/iron-chests-228756-2747935.jar"
+    },
+    {
+      "name": "JEI 4.16.1.302",
+      "path": "mods/jei_1.12.2-4.16.1.302.jar",
+      "url": "https://www.cursemaven.com/curse/maven/jei-238222/3043174/jei-238222-3043174.jar"
+    },
+    {
+      "name": "BSL Shaders v7.2",
+      "path": "shaderpacks/BSL_v7.2.zip",
+      "url": "https://www.cursemaven.com/curse/maven/bsl-shaders-322506/3037267/bsl-shaders-322506-3037267.jar"
+    },
+    {
+      "name": "Faithful 64x для 1.12.2",
+      "path": "resourcepacks/Faithful 64x 1.12.2.zip",
+      "url": "https://database.faithfulpack.net/packs/Classic-64x-Jappa-Java/Classic%20Faithful%2064x%20Jappa%20-%201.12.2.zip"
+    }
+  ]
+}

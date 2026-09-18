@@ -3,9 +3,9 @@ const $ = (id) => document.getElementById(id);
 // browser. The real Electron bridge takes precedence in the packaged launcher.
 if (!window.launcher) {
   window.launcher = {
-    info: async () => ({ maxRamGb: 16, ramGb: 4, nickname: 'Player', version: '0.2.4', contentState: 'install' }),
+    info: async () => ({ maxRamGb: 16, ramGb: 4, nickname: 'Player', version: '0.2.6', contentState: 'install', launcherSettings: { resolution: '960x700', fullscreen: false, launchBehavior: 'keep' } }),
     setNickname: async (value) => value,
-    setRam: async () => {}, mainAction: async () => ({ state: 'ready' }),
+    setRam: async () => {}, setLauncherSettings: async (settings) => settings, mainAction: async () => ({ state: 'ready' }),
     checkUpdate: async () => null, applyUpdate: async () => {},
     openMods: async () => {}, openShaders: async () => {}, openResourcepacks: async () => {}, openTelegram: () => window.open('https://t.me/baranus2', '_blank'),
     onStatus: () => {}, onProgress: () => {}, onLog: () => {}, onError: () => {}, onFinished: () => {}
@@ -16,6 +16,7 @@ const ram = $('ram'), ramValue = $('ramValue'), ramHint = $('ramHint'), nickname
 const update = $('update'), version = $('version'), greeting = $('greeting'), settingsPanel = $('settingsPanel');
 const nameModal = $('nameModal'), firstNickname = $('firstNickname'), action = $('mainAction');
 const actionTitle = $('mainActionTitle'), actionHint = $('mainActionHint');
+const windowResolution = $('windowResolution'), fullscreen = $('fullscreen'), launchBehavior = $('launchBehavior');
 let contentState = 'install';
 const pageMusic = {
   main: new Audio('main-theme.mp3'),
@@ -41,9 +42,13 @@ function syncPageMusic(page) {
 }
 nameModal.style.display = 'none';
 function showGreeting(name) { greeting.textContent = name ? `Добро пожаловать, ${name}!` : 'Добро пожаловать!'; }
-function renderAction(state) { contentState = state; const text = state === 'play' ? ['Играть', 'Запустить Minecraft'] : state === 'sync' ? ['Обновить', 'Проверить и обновить файлы сборки'] : ['Установить', 'Java, Minecraft и сборка']; actionTitle.textContent = text[0]; actionHint.textContent = text[1]; action.classList.toggle('is-play', state === 'play'); action.classList.toggle('is-sync', state === 'sync'); }
+function renderAction(state) { contentState = state; const text = state === 'play' ? ['Играть', 'Запустить Minecraft'] : state === 'sync' ? ['Обновить', 'Проверить и обновить файлы сборки'] : ['Установить', '']; actionTitle.textContent = text[0]; actionHint.textContent = text[1]; action.classList.toggle('is-play', state === 'play'); action.classList.toggle('is-sync', state === 'sync'); }
+function renderLauncherSettings(value = {}) { windowResolution.value = value.resolution || '960x700'; fullscreen.checked = Boolean(value.fullscreen); launchBehavior.value = value.launchBehavior || 'keep'; }
+async function saveLauncherSettings() { const saved = await window.launcher.setLauncherSettings({ resolution: windowResolution.value, fullscreen: fullscreen.checked, launchBehavior: launchBehavior.value }); renderLauncherSettings(saved); }
+function openSettings() { settingsPanel.hidden = false; requestAnimationFrame(() => settingsPanel.classList.add('is-open')); }
+function hideSettings() { settingsPanel.classList.remove('is-open'); window.setTimeout(() => { if (!settingsPanel.classList.contains('is-open')) settingsPanel.hidden = true; }, 180); }
 async function saveNickname(value) { const name = await window.launcher.setNickname(value); nickname.value = name; showGreeting(name); return name; }
-window.launcher.info().then((info) => { ram.max = info.maxRamGb; ram.value = info.ramGb; ramValue.textContent = `${info.ramGb} ГБ`; ramHint.textContent = `Максимум: ${info.maxRamGb} ГБ`; version.textContent = `v${info.version}`; nickname.value = info.nickname; showGreeting(info.nickname); renderAction(info.contentState); status.textContent = info.contentState === 'play' ? 'Сборка готова к запуску.' : info.contentState === 'sync' ? 'Доступно обновление файлов сборки.' : 'Нажми «Установить», чтобы подготовить сборку.'; showLauncherHome(); if (!info.nickname) { nameModal.hidden = false; nameModal.style.display = 'grid'; firstNickname.focus(); } window.launcher.checkUpdate().then((release) => { if (release) { update.hidden = false; update.textContent = `ОБНОВИТЬ ДО ${release.version}`; } }); });
+window.launcher.info().then((info) => { ram.max = info.maxRamGb; ram.value = info.ramGb; ramValue.textContent = `${info.ramGb} ГБ`; ramHint.textContent = `Максимум: ${info.maxRamGb} ГБ`; version.textContent = `v${info.version}`; nickname.value = info.nickname; showGreeting(info.nickname); renderAction(info.contentState); renderLauncherSettings(info.launcherSettings); status.textContent = info.contentState === 'play' ? 'Сборка готова к запуску.' : info.contentState === 'sync' ? 'Доступно обновление файлов сборки.' : 'Нажми «Установить», чтобы подготовить сборку.'; showLauncherHome(); if (!info.nickname) { nameModal.hidden = false; nameModal.style.display = 'grid'; firstNickname.focus(); } window.launcher.checkUpdate().then((release) => { if (release) { update.hidden = false; update.textContent = `ОБНОВИТЬ ДО ${release.version}`; } }); });
 window.launcher.onStatus((message) => status.textContent = message);
 window.launcher.onProgress(({ value, indeterminate }) => { fill.style.width = `${Math.max(0, Math.min(100, value || 0))}%`; fill.classList.toggle('indeterminate', Boolean(indeterminate)); progressText.textContent = indeterminate ? 'ПРОВЕРКА…' : `${Math.round(value || 0)}%`; });
 window.launcher.onLog((message) => { log.textContent += `${message}\n`; log.scrollTop = log.scrollHeight; });
@@ -52,7 +57,9 @@ window.launcher.onFinished((code) => { status.textContent = `Игра завер
 $('mods').onclick = () => window.launcher.openMods();
 $('shaders').onclick = () => window.launcher.openShaders();
 $('resources').onclick = () => window.launcher.openResourcepacks();
-$('settings').onclick = () => { settingsPanel.hidden = !settingsPanel.hidden; };
+$('settings').onclick = () => settingsPanel.hidden ? openSettings() : hideSettings();
+$('closeSettings').onclick = hideSettings;
+[windowResolution, fullscreen, launchBehavior].forEach((control) => { control.onchange = () => saveLauncherSettings().catch((error) => { status.textContent = `Ошибка настроек: ${error.message || error}`; }); });
 $('firstNicknameSave').onclick = async () => { try { await saveNickname(firstNickname.value); nameModal.hidden = true; nameModal.style.display = 'none'; } catch (error) { status.textContent = `Ошибка: ${error.message}`; } };
 firstNickname.onkeydown = (event) => { if (event.key === 'Enter') $('firstNicknameSave').click(); };
 nickname.onchange = () => saveNickname(nickname.value).catch((error) => { status.textContent = `Ошибка: ${error.message}`; });

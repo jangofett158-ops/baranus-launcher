@@ -178,7 +178,7 @@ body[data-theme="1165a"] footer{border-color:#7b1d283d;color:#c19ba0}body[data-t
 
 /* Vanilla page — bright jungle landscape with a readable shaded content area. */
 body[data-theme="1165b"] .workspace{background:linear-gradient(90deg,#052416cf 0%,#092c1999 42%,#05150c26 100%),linear-gradient(0deg,#03130888,transparent 55%),url('jungle-bg.jpg') center/cover no-repeat!important}
-body[data-theme="1165b"] .sidebar{background:linear-gradient(#071d13,#173c24)}
+body[data-theme="1165b"] .sidebar{background:linear-gradient(#070b08 0%,#112b1a 52%,#1b4329 100%)}
 body[data-theme="1165b"] .stars{display:none}
 body[data-theme="1165b"] .brand-text,body[data-theme="1165b"] .brand-text span,body[data-theme="1165b"] .settings{color:#d8f49a}
 .jungle-page{max-width:770px;margin:auto 0;padding:6% 0 8% 7%;text-shadow:0 3px 15px #042110cc}.jungle-overline{margin:0 0 14px;color:#d9f59b;font:600 10px/1.2 Unbounded,sans-serif;letter-spacing:1.1px}.jungle-page h1{margin:0;color:#f7ffe3;font:600 clamp(42px,5.7vw,82px)/1 Unbounded,sans-serif;letter-spacing:-3px}.jungle-page h1 span{color:#d3f069}.jungle-description{max-width:445px!important;margin:25px 0 0!important;color:#ecffd0!important;font-size:15px!important;line-height:1.65!important}.jungle-card{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:2px 14px;width:330px;margin-top:34px;padding:20px;border:1px solid #d5f487a8;border-radius:16px;background:#0d3a1bcf;box-shadow:0 14px 36px #03140b99}.jungle-card b{grid-row:span 2;color:#f3ffc8;font:600 30px Unbounded,sans-serif;letter-spacing:-2px}.jungle-card span{color:#d1f277;font:600 10px Unbounded,sans-serif;letter-spacing:1px}.jungle-card small{color:#dbf0b6;font-size:10px;line-height:1.5}
@@ -241,3 +241,19 @@ body[data-theme="space"] .stars{animation:drift 26s linear infinite,scpSignal 7s
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
 }
+
+/* SCP gets the red active marker; the other builds retain their own colours. */
+.page-dot[data-page="1165a"].active{outline:2px solid #f04455!important;outline-offset:5px;box-shadow:0 0 0 5px #d0142c30,0 0 20px #c20b255f!important}
+pre{border-color:#33404d;background:#000;color:#d9e7f5}
+
+/* Settings panel: same controls on every page, coloured by its active build. */
+body[data-theme="main"] #settings{display:block}
+body[data-theme="main"] .settings{color:#e1bd7c}
+#settingsPanel.settings-panel{display:grid;gap:16px;width:min(340px,calc(100vw - 44px));padding:22px;border:1px solid var(--settings-line,#5f8dc0);border-radius:16px;background:var(--settings-bg,#08172bf5);box-shadow:0 22px 60px #000a;color:var(--settings-text,#dcebff);opacity:0;transform:translateY(-12px) scale(.97);transform-origin:top right;pointer-events:none;transition:opacity .18s ease,transform .18s cubic-bezier(.2,.8,.2,1),border-color .25s ease,background .25s ease}
+#settingsPanel.settings-panel.is-open{opacity:1;transform:translateY(0) scale(1);pointer-events:auto}
+.settings-panel-head{display:flex;align-items:center;justify-content:space-between;gap:14px}.settings-panel-head b{color:var(--settings-accent,#b9dcff)!important;font:600 12px Unbounded,sans-serif!important;letter-spacing:.8px}.settings-panel-head button{display:grid;place-items:center;width:26px;height:26px;border:1px solid currentColor;border-radius:50%;background:transparent;color:var(--settings-accent,#b9dcff);font-size:20px;line-height:1;cursor:pointer;transition:transform .2s ease,background .2s ease}.settings-panel-head button:hover{transform:rotate(90deg);background:#ffffff14}
+#settingsPanel.settings-panel label{display:grid;gap:8px;color:var(--settings-label,#b8d4f4);font-size:9px;font-weight:700;letter-spacing:.7px}#settingsPanel.settings-panel select{width:100%;padding:10px 11px;border:1px solid var(--settings-line,#5f8dc0);border-radius:9px;background:#00000044;color:inherit;outline:0}#settingsPanel.settings-panel option{background:#0a1019;color:#fff}#settingsPanel.settings-panel small{color:var(--settings-muted,#9bb6d6);font-size:10px;line-height:1.45}.settings-toggle{grid-template-columns:18px 1fr;align-items:center;cursor:pointer}.settings-toggle input{width:16px;height:16px;margin:0;accent-color:var(--settings-accent,#9bd1ff)}.settings-toggle span{font-size:11px;letter-spacing:0;text-transform:none}
+body[data-theme="space"]{--settings-bg:#07182df7;--settings-line:#5a90ca;--settings-text:#e4f2ff;--settings-accent:#a8d7ff;--settings-label:#b8d8f7;--settings-muted:#91afd0}
+body[data-theme="1165a"]{--settings-bg:#170b10f7;--settings-line:#9a3341;--settings-text:#faeef0;--settings-accent:#ef6070;--settings-label:#e4a0a8;--settings-muted:#b88990}
+body[data-theme="1165b"]{--settings-bg:#102719f7;--settings-line:#83af67;--settings-text:#f1f9df;--settings-accent:#c2eb91;--settings-label:#c8dea9;--settings-muted:#a2bd91}
+body[data-theme="main"]{--settings-bg:#17130ff7;--settings-line:#a48350;--settings-text:#f5eddf;--settings-accent:#e1bd7c;--settings-label:#dbc49d;--settings-muted:#aa9d88}

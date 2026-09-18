@@ -38,6 +38,16 @@ const VISUALS = [
   { name: 'BSL Shaders v7.2', file: 'BSL_v7.2.zip', directory: SHADERS_DIR, url: 'https://www.cursemaven.com/curse/maven/bsl-shaders-322506/3037267/bsl-shaders-322506-3037267.jar' },
   { name: 'Faithful 64x для 1.12.2', file: 'Faithful 64x 1.12.2.zip', directory: RESOURCEPACKS_DIR, url: 'https://database.faithfulpack.net/packs/Classic-64x-Jappa-Java/Classic%20Faithful%2064x%20Jappa%20-%201.12.2.zip' }
 ];
+const CONTENT_MANIFEST_URL = 'https://raw.githubusercontent.com/jangofett158-ops/baranus-launcher/main/content-manifest.json';
+const DEFAULT_CONTENT_MANIFEST = {
+  schema: 1,
+  contentVersion: 'built-in-0.2.5',
+  assets: [
+    { name: 'OptiFine HD U G5', path: 'mods/OptiFine_1.12.2_HD_U_G5.jar', source: 'optifine' },
+    ...MODS.filter((mod) => !mod.optifine).map((mod) => ({ name: mod.name, path: `mods/${mod.file}`, url: mod.url })),
+    ...VISUALS.map((asset) => ({ name: asset.name, path: `${path.basename(asset.directory)}/${asset.file}`, url: asset.url }))
+  ]
+};
 
 let window;
 let running = false;
@@ -80,9 +90,11 @@ function syncManagedFiles(files) {
   fs.writeFileSync(MANAGED_FILES_PATH, JSON.stringify({ files: next }, null, 2));
 }
 
-function getContentState() {
+async function getContentState() {
   if (!fs.existsSync(JAVA_EXE) || !fs.existsSync(MINECRAFT_INSTALL_MARKER)) return 'install';
-  return readSettings().contentVersion === APP_VERSION ? 'play' : 'sync';
+  const manifest = await getContentManifest();
+  const settings = readSettings();
+  return settings.contentVersion === APP_VERSION && settings.contentManifestVersion === manifest.contentVersion ? 'play' : 'sync';
 }
 
 function getRamGb() {
@@ -104,6 +116,42 @@ function saveNickname(value) {
   if (!/^[A-Za-z0-9_]{3,16}$/.test(nickname)) throw new Error('Имя: 3–16 латинских букв, цифр или _.');
   writeSettings({ nickname });
   return nickname;
+}
+
+const WINDOW_RESOLUTIONS = new Set(['960x700', '1280x720', '1600x900', '1920x1080']);
+const LAUNCH_BEHAVIORS = new Set(['keep', 'minimize', 'close']);
+
+function getLauncherSettings() {
+  const saved = readSettings();
+  const resolution = WINDOW_RESOLUTIONS.has(saved.windowResolution) ? saved.windowResolution : '960x700';
+  return {
+    resolution,
+    fullscreen: Boolean(saved.fullscreen),
+    launchBehavior: LAUNCH_BEHAVIORS.has(saved.launchBehavior) ? saved.launchBehavior : 'keep'
+  };
+}
+
+function saveLauncherSettings(changes = {}) {
+  const current = getLauncherSettings();
+  const next = {
+    resolution: WINDOW_RESOLUTIONS.has(changes.resolution) ? changes.resolution : current.resolution,
+    fullscreen: typeof changes.fullscreen === 'boolean' ? changes.fullscreen : current.fullscreen,
+    launchBehavior: LAUNCH_BEHAVIORS.has(changes.launchBehavior) ? changes.launchBehavior : current.launchBehavior
+  };
+  writeSettings({ windowResolution: next.resolution, fullscreen: next.fullscreen, launchBehavior: next.launchBehavior });
+  if (window && !window.isDestroyed()) {
+    const [width, height] = next.resolution.split('x').map(Number);
+    if (!window.isFullScreen()) { window.setSize(width, height); window.center(); }
+    if (window.isFullScreen() !== next.fullscreen) window.setFullScreen(next.fullscreen);
+  }
+  return next;
+}
+
+function applyLaunchBehavior() {
+  if (!window || window.isDestroyed()) return;
+  const { launchBehavior } = getLauncherSettings();
+  if (launchBehavior === 'minimize') window.minimize();
+  if (launchBehavior === 'close') window.close();
 }
 
 function fetchBuffer(url, progress) {
@@ -128,6 +176,80 @@ function fetchBuffer(url, progress) {
     request.setTimeout(20000, () => request.destroy(new Error('Сервер загрузки не ответил за 20 секунд.')));
     request.on('error', reject);
   });
+}
+
+function validateContentManifest(manifest) {
+  if (!manifest || manifest.schema !== 1 || typeof manifest.contentVersion !== 'string' || !Array.isArray(manifest.assets) || !manifest.assets.length) {
+    throw new Error('Неверный формат content-manifest.json.');
+  }
+  for (const asset of manifest.assets) {
+    if (!asset || typeof asset.name !== 'string' || typeof asset.path !== 'string' || (!asset.url && asset.source !== 'optifine')) {
+      throw new Error('В content-manifest.json есть неполное описание файла.');
+    }
+  }
+  return manifest;
+}
+
+async function getContentManifest() {
+  try {
+    const manifest = JSON.parse((await fetchBuffer(CONTENT_MANIFEST_URL)).toString('utf8'));
+    return validateContentManifest(manifest);
+  } catch (error) {
+    emit('log', `Не удалось загрузить удалённый manifest сборки: ${error.message || error}. Используем встроенный список.`);
+    return DEFAULT_CONTENT_MANIFEST;
+  }
+}
+
+function getContentTarget(relativePath) {
+  const normalized = String(relativePath).replaceAll('\\', '/');
+  if (!/^(mods|config|shaderpacks|resourcepacks)\/.+/.test(normalized)) throw new Error(`Недопустимый путь в manifest: ${relativePath}`);
+  const target = path.resolve(GAME_DIR, normalized);
+  if (!target.startsWith(`${path.resolve(GAME_DIR)}${path.sep}`)) throw new Error(`Небезопасный путь в manifest: ${relativePath}`);
+  return target;
+}
+
+async function resolveContentUrl(asset) {
+  if (asset.source === 'optifine') {
+    const page = (await fetchBuffer('https://optifine.net/adloadx?f=OptiFine_1.12.2_HD_U_G5.jar')).toString('utf8');
+    const match = page.match(/href=['"](downloadx\?f=OptiFine_1\.12\.2_HD_U_G5\.jar(?:&amp;|&)x=[a-f0-9]+)['"]/i);
+    if (!match) throw new Error('Официальный сайт OptiFine не выдал ссылку на скачивание.');
+    return `https://optifine.net/${match[1].replace('&amp;', '&')}`;
+  }
+  const url = new URL(asset.url);
+  if (url.protocol !== 'https:') throw new Error(`Разрешены только HTTPS-ссылки: ${asset.name}`);
+  return url.toString();
+}
+
+function hasValidContentAsset(target, sha256) {
+  if (!fs.existsSync(target)) return false;
+  if (!sha256) return fs.statSync(target).size > 1000;
+  const actual = crypto.createHash('sha256').update(fs.readFileSync(target)).digest('hex');
+  return actual.toLowerCase() === String(sha256).toLowerCase();
+}
+
+async function installContentManifest(manifest) {
+  const installed = [];
+  for (let index = 0; index < manifest.assets.length; index++) {
+    const asset = manifest.assets[index];
+    const target = getContentTarget(asset.path);
+    installed.push(target);
+    if (hasValidContentAsset(target, asset.sha256)) continue;
+    emit('status', `Скачиваем ${asset.name} (${index + 1}/${manifest.assets.length})…`);
+    const url = await resolveContentUrl(asset);
+    const data = await fetchBuffer(url, (received, total) => {
+      const part = total ? received / total : 0;
+      emit('progress', { value: 20 + ((index + part) / manifest.assets.length) * 25, indeterminate: !total });
+    });
+    if (asset.sha256) {
+      const actual = crypto.createHash('sha256').update(data).digest('hex');
+      if (actual.toLowerCase() !== String(asset.sha256).toLowerCase()) throw new Error(`Не совпал SHA-256 файла: ${asset.name}`);
+    }
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(`${target}.download`, data);
+    fs.renameSync(`${target}.download`, target);
+  }
+  syncManagedFiles(installed);
+  return manifest.contentVersion;
 }
 
 function compareVersions(a, b) {
@@ -289,21 +411,18 @@ async function ensureLaunchWrapper() {
 async function installDependencies() {
   ensureDirectories();
   emit('status', 'Устанавливаем зависимости сборки…');
-  await installMods();
-  await installVisuals();
+  const manifest = await getContentManifest();
+  const contentManifestVersion = await installContentManifest(manifest);
   await getForgeInstaller();
   await ensureLaunchWrapper();
-  syncManagedFiles([
-    ...MODS.map((mod) => path.join(MODS_DIR, mod.file)),
-    ...VISUALS.map((asset) => path.join(asset.directory, asset.file))
-  ]);
+  writeSettings({ contentManifestVersion });
   fs.writeFileSync(DEPENDENCIES_INSTALL_MARKER, 'Forge, mods, OptiFine and visual packs were installed by Baranus Launcher.');
   emit('progress', { value: 100, indeterminate: false });
   emit('status', 'Зависимости установлены. Теперь установи Minecraft.');
 }
 
 async function runMainAction(nickname, ramGb) {
-  const state = getContentState();
+  const state = await getContentState();
   if (state === 'play') return prepareMinecraft(nickname, true, saveRamGb(ramGb));
   if (state === 'install') {
     emit('status', 'Подготавливаем Baranus Launcher: Java, Minecraft и сборка…');
@@ -361,6 +480,7 @@ async function prepareMinecraft(nickname, startAfterInstall = true, ramGb = getR
   emit('progress', { value: 100, indeterminate: false });
   if (!startAfterInstall) fs.writeFileSync(MINECRAFT_INSTALL_MARKER, 'Minecraft and Forge were installed by Baranus Launcher.');
   emit('status', startAfterInstall ? 'Minecraft запущен.' : 'Minecraft установлен.');
+  if (startAfterInstall) applyLaunchBehavior();
 }
 
 async function getBundledJava() {
@@ -387,22 +507,26 @@ async function getBundledJava() {
 }
 
 function createWindow() {
+  const preferences = getLauncherSettings();
+  const [width, height] = preferences.resolution.split('x').map(Number);
   window = new BrowserWindow({
-    width: 960,
-    height: 700,
+    width,
+    height,
     minWidth: 900,
     minHeight: 650,
     resizable: true,
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true }
   });
   window.removeMenu();
+  if (preferences.fullscreen) window.setFullScreen(true);
   window.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 }
 
 app.whenReady().then(() => { ensureDirectories(); createWindow(); });
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
 
-ipcMain.handle('game-info', () => ({ gameDir: GAME_DIR, modsDir: MODS_DIR, shadersDir: SHADERS_DIR, resourcepacksDir: RESOURCEPACKS_DIR, forge: FORGE_VERSION, javaPath: fs.existsSync(JAVA_EXE) ? JAVA_EXE : '', ramGb: getRamGb(), maxRamGb: MAX_RAM_GB, nickname: getNickname(), version: APP_VERSION, contentState: getContentState() }));
+ipcMain.handle('game-info', async () => ({ gameDir: GAME_DIR, modsDir: MODS_DIR, shadersDir: SHADERS_DIR, resourcepacksDir: RESOURCEPACKS_DIR, forge: FORGE_VERSION, javaPath: fs.existsSync(JAVA_EXE) ? JAVA_EXE : '', ramGb: getRamGb(), maxRamGb: MAX_RAM_GB, nickname: getNickname(), version: APP_VERSION, contentState: await getContentState(), launcherSettings: getLauncherSettings() }));
+ipcMain.handle('set-launcher-settings', (_event, changes) => saveLauncherSettings(changes));
 ipcMain.handle('check-update', () => checkForUpdate());
 ipcMain.handle('apply-update', () => applyUpdate());
 ipcMain.handle('set-ram', (_event, ramGb) => saveRamGb(ramGb));
