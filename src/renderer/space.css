@@ -225,8 +225,9 @@ body[data-theme="1165b"] footer{border-color:#dcf28b55;color:#e4f8b0}body[data-t
 .settings,footer button{transition:color .2s ease,opacity .2s ease,transform .2s ease}
 .settings:hover,footer button:hover{transform:translateY(-1px)}
 
-/* The launcher-update action is shared by all pages and sits above the brand. */
-#update:not([hidden]){position:absolute;z-index:4;top:11px;left:24px;padding:7px 10px!important;border:1px solid currentColor!important;border-radius:8px!important;background:#07111dcc!important;font:600 8px/1 Unbounded,sans-serif!important;letter-spacing:.35px!important;box-shadow:0 7px 18px #0005}
+/* The launcher-update action is shared by all pages and stays beside the brand. */
+.brand-cluster{display:flex;align-items:center;gap:14px;min-width:0}
+#update:not([hidden]){position:relative;z-index:4;padding:7px 10px!important;border:1px solid currentColor!important;border-radius:8px!important;background:#07111dcc!important;font:600 8px/1 Unbounded,sans-serif!important;letter-spacing:.35px!important;box-shadow:0 7px 18px #0005}
 
 .future-page{animation:pageReveal .55s cubic-bezier(.2,.8,.2,1) both}
 .future-page h1{animation:cardReveal .58s .05s cubic-bezier(.2,.8,.2,1) both}
